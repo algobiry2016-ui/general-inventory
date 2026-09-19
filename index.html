@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>المخزون — رصيد افتتاحي · وارد · منصرف</title>
+<style>
+:root{
+  --ink:#0D2026; --teal:#0E6E63; --amber:#B4770F; --red:#A8291F;
+  --bg:#F4F6F5; --card:#fff; --line:#DCE4E3; --line2:#EDF1F0; --txt:#12262C; --txt2:#5C7076;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:"Noto Kufi Arabic","Cairo","Segoe UI",Tahoma,Arial,sans-serif;font-size:15px;line-height:1.6}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+h1,h2,h3{margin:0;font-weight:700}
+.topbar{background:var(--ink);color:#EAF2F1;padding:14px 16px 0}
+.topbar h1{font-size:16px}
+.topbar small{color:#8FAFAD;font-size:11.5px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:12px 0 0;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:0;background:transparent;color:#9DBAB8;padding:9px 14px;border-radius:8px 8px 0 0;cursor:pointer;white-space:nowrap;font-weight:600;font-size:13.5px}
+.tab.on{background:var(--bg);color:var(--ink)}
+main{padding:16px 14px 40px;max-width:1000px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 2px rgba(13,32,38,.06)}
+.card+.card{margin-top:14px}
+.card-h{padding:13px 15px;border-bottom:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.card-h h3{font-size:15px}
+.card-h .sub{font-size:12px;color:var(--txt2)}
+.card-b{padding:15px}
+.pagehead{margin-bottom:14px}
+.pagehead h2{font-size:19px}
+.pagehead p{margin:2px 0 0;color:var(--txt2);font-size:12.5px}
+.grid{display:grid;gap:11px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+label.f{display:block}
+label.f>span{display:block;font-size:12px;font-weight:600;color:var(--txt2);margin-bottom:4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+input:focus,select:focus{outline:2px solid var(--teal);outline-offset:-1px}
+.btn{border:1px solid var(--line);background:#fff;padding:8px 13px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13.5px}
+.btn:hover{background:#FAFCFB}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn.primary:hover{background:#0B584F}
+.btn.sm{padding:5px 9px;font-size:12.5px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--txt2)}
+.btn.ghost:hover{background:var(--line2);color:var(--txt)}
+.btn.danger{color:var(--red);border-color:#E8CFCC}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:9px 11px;text-align:right;border-bottom:1px solid var(--line2);white-space:nowrap}
+th{background:#F7FAF9;font-size:11.5px;color:var(--txt2);font-weight:700}
+td.num,th.num{font-variant-numeric:tabular-nums;font-weight:600}
+td.wrap{white-space:normal;min-width:130px}
+tfoot td{background:#F7FAF9;font-weight:800;border-top:2px solid var(--line)}
+tbody tr:hover{background:#FAFCFB}
+.tag{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11.5px;font-weight:700}
+.ok{background:#E4F1EE;color:#0A5B52}.low{background:#FBF0DC;color:#8A5A08}.zero{background:#FBE7E5;color:var(--red)}
+.empty{text-align:center;padding:32px 16px;color:var(--txt2)}
+.empty strong{display:block;color:var(--txt);margin-bottom:5px}
+.detail{background:#FBFCFC;font-size:12.5px;color:var(--txt2)}
+.detail td{white-space:normal}
+#toast{position:fixed;inset-inline:0;bottom:16px;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:99;pointer-events:none}
+.toast{background:var(--ink);color:#fff;padding:10px 16px;border-radius:100px;font-size:13.5px;font-weight:600;max-width:90%}
+.toast.bad{background:var(--red)}
+#print-zone{display:none}
+.gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.gate .card{width:100%;max-width:340px}
+.gate h2{font-size:17px;margin-bottom:2px}
+.gate p{color:var(--txt2);font-size:12.5px;margin:0 0 16px}
+.err{color:var(--red);font-size:12.5px;margin-top:8px;min-height:1em}
+.topbtns{position:absolute;inset-inline-end:14px;top:12px;display:flex;gap:6px}
+.topbar{position:relative}
+.icobtn{border:1px solid #23414A;background:#12303A;color:#EAF2F1;padding:6px 11px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600}
+.icobtn:hover{background:#17414D}
+.modal-bg{position:fixed;inset:0;background:rgba(13,32,38,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal{background:#fff;border-radius:12px;max-width:380px;width:100%;max-height:90vh;overflow:auto}
+.modal .card-h{border-radius:12px 12px 0 0}
+.who{font-size:12px;color:var(--txt2);background:var(--line2);padding:8px 10px;border-radius:8px;margin-bottom:12px}
+.badge-branch{display:inline-block;background:#E4F1EE;color:#0A5B52;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:700;margin-inline-start:6px}
+select.badge-branch{border:none;appearance:none;-webkit-appearance:none;-moz-appearance:none;cursor:pointer;padding-inline-end:20px;font-family:inherit}
+@media print{
+  .app{display:none!important}#toast{display:none!important}
+  body{background:#fff}
+  #print-zone{display:block!important}
+  #print-zone table{width:100%;font-size:11px;border-collapse:collapse}
+  #print-zone th,#print-zone td{border:1px solid #bbb;padding:5px;text-align:right}
+  @page{size:A4;margin:12mm}
+}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+</head>
+<body>
+<div id="gate" class="gate" style="display:none">
+  <div class="card">
+    <div class="card-h"><h3>تسجيل الدخول</h3></div>
+    <div class="card-b">
+      <p style="color:var(--txt2);font-size:12.5px;margin:0 0 14px">نظام المخزون — دوكمنتيشن فلاورز</p>
+      <div class="grid" style="gap:10px">
+        <label class="f"><span>البريد الإلكتروني</span><input id="lg-email" type="email" autocomplete="username" placeholder="name@email.com"></label>
+        <label class="f"><span>كلمة المرور</span><input id="lg-pass" type="password" autocomplete="current-password" placeholder="••••••••"></label>
+      </div>
+      <div class="btnrow" style="margin-top:14px"><button class="btn primary" id="lg-btn" style="width:100%">دخول</button></div>
+      <div class="err" id="lg-err"></div>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
+  <header class="topbar">
+    <h1>المخزون <span id="branch-widget" style="vertical-align:middle"></span></h1>
+    <small id="sync-status">كميات فقط — بدون أي أسعار أو حسابات مالية</small>
+    <div class="topbtns">
+      <button class="icobtn" id="btn-settings">⚙️ الإعدادات</button>
+      <button class="icobtn" id="btn-logout">خروج</button>
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </header>
+  <main id="view"></main>
+</div>
+<div id="settings-modal"></div>
+<div id="print-zone"></div>
+<div id="toast"></div>
+
+<script>
+const KEY='inventory-simple-v1';
+const UNITS=['حبة','درزن','كرتون','كيلو','صندوق','علبة','باقة','متر','لتر','طقم'];
+const BRANCHES=['الفرع الرئيسي','فرع الرياض'];
+/* من يرى كل الفروع، ومين مقيّد بفرع معيّن — عدّل هالقائمة من كود الملف عند إضافة موظف جديد */
+const ACCESS_MAP={
+  'algobiry2016@gmail.com':{branch:'all'},
+  'dm.flowers11@gmail.com':{branch:'all'},
+  'ahmeddmflowers@gmail.com':{branch:'فرع الرياض'}
+};
+const DEFAULT_BRANCH='الفرع الرئيسي'; // أي بريد غير مذكور أعلاه يُعتبر تلقائيًا موظف الفرع الرئيسي
+let DB={items:[],moves:[]};           // items: {..., branch}; moves: {id,type:'in'|'out'|'damage',date,no,party,itemId,qty,notes,by}
+let V='open', F={};
+let noStore=false;
+let CUR_EMAIL=null, CUR_BRANCH=null, CUR_ALL=false, VIEW=null;
+const access=email=>ACCESS_MAP[(email||'').toLowerCase()]||{branch:DEFAULT_BRANCH};
+/* الأصناف/الحركات المرئية حسب الفرع المختار حاليًا للعرض (VIEW) */
+const visItems=()=>VIEW==='all'?DB.items:DB.items.filter(i=>(i.branch||DEFAULT_BRANCH)===VIEW);
+const visMoves=()=>{const ids=new Set(visItems().map(i=>i.id));return DB.moves.filter(m=>ids.has(m.itemId))};
+
+const $=s=>document.querySelector(s);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const n=v=>{const x=Number(v);return isFinite(x)?x:0};
+const fmt=v=>n(v).toLocaleString('en-US',{maximumFractionDigits:3});
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const dH=s=>{const p=(s||'').split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:'—'};
+const ym=s=>(s||'').slice(0,7);
+const M=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const mName=v=>{const[y,m]=(v||'').split('-');return m?`${M[+m-1]} ${y}`:'—'};
+const it=id=>DB.items.find(i=>i.id===id);
+const DEFAULT_CATS=['عطور','فازات','شوكلت','تغليف'];
+const allCats=()=>[...new Set([...DEFAULT_CATS,...DB.items.map(i=>i.category).filter(Boolean)])];
+const allUnits=()=>[...new Set([...UNITS,...DB.items.map(i=>i.unit).filter(Boolean)])];
+function toast(m,k){const t=document.createElement('div');t.className='toast '+(k||'');t.textContent=m;$('#toast').appendChild(t);setTimeout(()=>t.remove(),3000)}
+
+/* Firebase — قاعدة بيانات مشتركة بين كل من يفتح هذا الملف من أي متصفح */
+const firebaseConfig = {
+  apiKey: "AIzaSyBWqYAsKVx0wOJTAahhQdLj20x9y37hHX0",
+  authDomain: "r123466e.firebaseapp.com",
+  databaseURL: "https://r123466e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "r123466e"
+};
+let fbRef=null;
+try{ firebase.initializeApp(firebaseConfig); fbRef=firebase.database().ref(KEY); }catch(e){fbRef=null}
+
+let lastSyncedRaw=null;
+let tm;function save(){clearTimeout(tm);tm=setTimeout(async()=>{
+  try{
+    lastSyncedRaw=JSON.stringify(DB);
+    if(fbRef){await fbRef.set(DB)}
+    else{localStorage.setItem(KEY,lastSyncedRaw)}
+  }catch(e){noStore=true}
+},200)}
+
+/* الرصيد الحالي = افتتاحي + وارد − منصرف */
+function bal(id,upto){
+  const i=it(id); if(!i) return 0;
+  let b=n(i.opening);
+  DB.moves.forEach(m=>{if(m.itemId!==id)return; if(upto&&m.date>upto)return;
+    b+= m.type==='in'?n(m.qty):-n(m.qty)});
+  return b;
+}
+const st=(b,min)=> n(b)<=0?{k:'zero',t:'نفد'} : (n(min)>0&&n(b)<=n(min)?{k:'low',t:'منخفض'}:{k:'ok',t:'متوفر'});
+
+/* تنبيهات واتساب للأصناف اللي وصلت للحد الأدنى */
+const WHATS_NUM='966533228036';
+const waLink=text=>`https://wa.me/${WHATS_NUM}?text=${encodeURIComponent(text)}`;
+const lowItems=()=>visItems().map(i=>({i,b:bal(i.id)})).filter(x=>st(x.b,x.i.min).k!=='ok');
+const lowMsg=(i,b)=>`⚠️ تنبيه مخزون\nالصنف: ${i.name}\nالمتبقي: ${fmt(b)} ${i.unit}\nالحد الأدنى: ${fmt(i.min)} ${i.unit}\nالحالة: ${st(b,i.min).t}`;
+const allLowMsg=list=>`⚠️ تنبيه مخزون — أصناف منخفضة (${list.length})\n\n`+list.map(x=>`• ${x.i.name}: متبقي ${fmt(x.b)} ${x.i.unit} (الحد الأدنى ${fmt(x.i.min)})`).join('\n');
+
+/* ---------- التنقل ---------- */
+const TABS=[{id:'open',t:'الرصيد الافتتاحي'},{id:'in',t:'الوارد'},{id:'out',t:'المنصرف'},{id:'damage',t:'التالف'},{id:'rep',t:'التقرير الشهري'},{id:'repday',t:'التقرير اليومي'}];
+function go(v){V=v;F={};render();scrollTo(0,0)}
+function render(){
+  const a=document.activeElement;
+  const keepId=(a&&a.id&&a.tagName==='INPUT')?a.id:null;
+  const sel=keepId?[a.selectionStart,a.selectionEnd]:null;
+  $('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${V===t.id?'on':''}" data-v="${t.id}">${t.t}</button>`).join('');
+  $('#tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>go(b.dataset.v));
+  $('#view').innerHTML={open:vOpen,in:vMove,out:vMove,damage:vMove,rep:vRep,repday:vRepDay}[V]();
+  bind();
+  if(keepId){const el=document.getElementById(keepId);
+    if(el){el.focus();try{el.setSelectionRange(sel[0],sel[1])}catch(e){}}}
+}
+
+/* ---------- 1) الرصيد الافتتاحي (وهو أيضًا سجل الأصناف) ---------- */
+function vOpen(){
+  const q=(F.q||'').trim();
+  let list=visItems().slice().sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  if(q)list=list.filter(i=>i.name.toLowerCase().includes(q.toLowerCase()));
+  if(F.qcat)list=list.filter(i=>(i.category||'')===F.qcat);
+  const low=lowItems();
+  return `
+  <div class="pagehead"><h2>الرصيد الافتتاحي</h2>
+    <p>أضف أصنافك والكميات الموجودة في المخزن عند البداية. الرصيد الحالي يُحسب تلقائيًا.</p></div>
+
+  ${low.length?`<div class="card" style="border-color:#F0C89C">
+    <div class="card-h"><h3 style="color:var(--amber)">⚠️ أصناف منخفضة أو نفدت</h3><span class="sub">${low.length} صنف</span></div>
+    <div class="card-b">
+      <div class="btnrow" style="margin-bottom:${low.length>1?'10px':'0'}">
+        ${low.length>1?`<a class="btn primary sm" target="_blank" href="${waLink(allLowMsg(low))}">إرسال تنبيه بكل الأصناف عبر واتساب</a>`:''}
+      </div>
+      <div class="tblwrap"><table><thead><tr><th>الصنف</th><th class="num">المتبقي</th><th>الحالة</th><th></th></tr></thead>
+      <tbody>${low.map(x=>`<tr>
+        <td class="wrap"><b>${esc(x.i.name)}</b></td>
+        <td class="num">${fmt(x.b)} ${esc(x.i.unit)}</td>
+        <td><span class="tag ${st(x.b,x.i.min).k}">${st(x.b,x.i.min).t}</span></td>
+        <td><a class="btn ghost sm" target="_blank" href="${waLink(lowMsg(x.i,x.b))}">إرسال واتساب</a></td></tr>`).join('')}</tbody></table></div>
+    </div>
+  </div>`:''}
+
+  <div class="card">
+    <div class="card-h"><h3>إضافة صنف</h3></div>
+    <div class="card-b">
+      <div class="grid g2">
+        <label class="f"><span>اسم الصنف *</span><input id="a-name" placeholder="مثال: ورد أحمر"></label>
+        <label class="f"><span>التصنيف</span><input id="a-cat" list="cat-list" placeholder="مثال: عطور"></label>
+        <label class="f"><span>الوحدة</span><input id="a-unit" list="units-list" placeholder="مثال: حبة" value="حبة"></label>
+        <label class="f"><span>الرصيد الافتتاحي</span><input id="a-open" type="number" step="any" min="0" value="0"></label>
+        <label class="f"><span>الحد الأدنى للتنبيه</span><input id="a-min" type="number" step="any" min="0" value="0"></label>
+        ${CUR_ALL?`<label class="f"><span>الفرع</span><select id="a-branch">${BRANCHES.map(b=>`<option ${b===(VIEW!=='all'?VIEW:DEFAULT_BRANCH)?'selected':''}>${esc(b)}</option>`).join('')}</select></label>`:''}
+      </div>
+      <datalist id="cat-list">${allCats().map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+      <datalist id="units-list">${allUnits().map(u=>`<option value="${esc(u)}">`).join('')}</datalist>
+      <div class="btnrow" style="margin-top:12px"><button class="btn primary" data-a="additem">إضافة الصنف</button></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>الأصناف والأرصدة${VIEW==='all'?'':` — ${esc(VIEW)}`}</h3><span class="sub">${list.length} صنف${q?` من ${visItems().length}`:''}</span></div>
+    <div class="card-b" style="padding-bottom:0;border-bottom:1px solid var(--line2)">
+      <div class="grid g2">
+        <label class="f"><span>بحث عن صنف</span>
+          <input id="search-item" data-f="q" data-live="1" value="${esc(F.q||'')}" placeholder="اكتب اسم الصنف...">
+        </label>
+        <label class="f"><span>التصنيف</span><select data-f="qcat"><option value="">كل التصنيفات</option>
+          ${allCats().map(c=>`<option value="${esc(c)}" ${F.qcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+      </div>
+    </div>
+    <div class="tblwrap">
+    ${list.length?`<table><thead><tr>
+      <th>الصنف</th><th>التصنيف</th>${VIEW==='all'?'<th>الفرع</th>':''}<th>الوحدة</th><th class="num" style="min-width:120px">الرصيد الافتتاحي</th>
+      <th class="num" style="min-width:110px">الحد الأدنى</th><th class="num">الرصيد الحالي</th><th>الحالة</th><th></th></tr></thead>
+      <tbody>${list.map(i=>{const b=bal(i.id),s=st(b,i.min);return `<tr>
+        <td class="wrap"><b>${esc(i.name)}</b></td>
+        <td><input list="cat-list" data-cat="${i.id}" value="${esc(i.category||'')}" placeholder="—" style="min-width:100px"></td>
+        ${VIEW==='all'?`<td><span class="badge-branch">${esc(i.branch||DEFAULT_BRANCH)}</span></td>`:''}
+        <td><input list="units-list" data-unit="${i.id}" value="${esc(i.unit)}" style="min-width:80px"></td>
+        <td><input type="number" step="any" min="0" data-op="${i.id}" value="${n(i.opening)}"></td>
+        <td><input type="number" step="any" min="0" data-mn="${i.id}" value="${n(i.min)}"></td>
+        <td class="num" style="font-size:15px">${fmt(b)}</td>
+        <td><span class="tag ${s.k}">${s.t}</span></td>
+        <td><button class="btn ghost sm" data-a="delitem" data-id="${i.id}">حذف</button></td></tr>`}).join('')}</tbody>
+      <tfoot><tr><td colspan="${VIEW==='all'?4:3}">الإجمالي</td><td class="num">${fmt(list.reduce((a,i)=>a+n(i.opening),0))}</td><td></td>
+        <td class="num">${fmt(list.reduce((a,i)=>a+bal(i.id),0))}</td><td colspan="2"></td></tr></tfoot></table>`
+    :`<div class="empty"><strong>${q?'لا يوجد صنف مطابق للبحث':'لا توجد أصناف بعد'}</strong>${q?'جرّب كلمة أخرى.':'أضف أول صنف من النموذج بالأعلى.'}</div>`}
+    </div>
+    ${list.length?`<div class="card-b" style="border-top:1px solid var(--line2)">
+      <button class="btn primary" data-a="saveopen">حفظ التعديلات</button>
+      <span style="font-size:11.5px;color:var(--txt2);margin-inline-start:8px">عدّل الأرقام في الجدول ثم احفظ.</span>
+    </div>`:''}
+  </div>
+
+  <div class="card"><div class="card-b btnrow">
+    <button class="btn sm" data-a="backup">تصدير نسخة احتياطية</button>
+    ${CUR_ALL?`<label class="btn sm" style="cursor:pointer">استيراد نسخة (يستبدل كل الفروع)<input type="file" accept=".json" data-a="restore" style="display:none"></label>`:''}
+  </div></div>`;
+}
+
+/* ---------- 2+3+4) الوارد / المنصرف / التالف ---------- */
+function vMove(){
+  const CFG={
+    in:{title:'الوارد',desc:'كل كمية تدخل المخزن تُضاف تلقائيًا إلى الرصيد.',party:'اسم المورد',btn:'إضافة إلى المخزون',check:false},
+    out:{title:'المنصرف',desc:'كل كمية تخرج من المخزن تُخصم تلقائيًا من الرصيد.',party:'اسم العميل / الجهة',btn:'خصم من المخزون',check:true},
+    damage:{title:'التالف / الهالك',desc:'سجّل الكميات التالفة أو المفقودة، سيتم خصمها تلقائيًا من المخزون.',party:'سبب التلف',btn:'تسجيل كتالف',check:true}
+  }[V];
+
+  let rows=visMoves().filter(m=>m.type===V);
+  if(F.item)rows=rows.filter(m=>m.itemId===F.item);
+  if(F.mcat)rows=rows.filter(m=>{const i2=it(m.itemId);return i2&&(i2.category||'')===F.mcat});
+  if(F.from)rows=rows.filter(m=>m.date>=F.from);
+  if(F.to)rows=rows.filter(m=>m.date<=F.to);
+  rows.sort((a,b)=>b.date.localeCompare(a.date));
+  const total=rows.reduce((a,m)=>a+n(m.qty),0);
+
+  if(!visItems().length) return `<div class="card"><div class="empty"><strong>أضف الأصناف أولاً</strong>
+    ابدأ من تبويب «الرصيد الافتتاحي».<br><button class="btn primary sm" style="margin-top:10px" data-a="goopen">الذهاب إلى الأصناف</button></div></div>`;
+
+  // اختيار الصنف بالبحث عن جزء من الاسم بدل القائمة المنسدلة
+  if(F.mid && (!it(F.mid) || it(F.mid).name!==F.mq)) delete F.mid;
+  const q=(F.mq||'').trim();
+  const matches=q?visItems().filter(i=>i.name.toLowerCase().includes(q.toLowerCase())).slice(0,10):[];
+  const showList=q && !F.mid;
+  const picked=F.mid?it(F.mid):null;
+
+  return `
+  <div class="pagehead"><h2>${CFG.title}</h2><p>${CFG.desc}</p></div>
+
+  <div class="card">
+    <div class="card-h"><h3>تسجيل ${CFG.title==='الوارد'?'وارد':(CFG.title==='المنصرف'?'صرف':'تالف')} جديد</h3></div>
+    <div class="card-b">
+      <div class="grid g2">
+        <label class="f"><span>التاريخ</span><input id="m-date" data-f="mdate" data-live="1" type="date" value="${esc(F.mdate||today())}"></label>
+        <label class="f"><span>رقم الفاتورة / العملية</span><input id="m-no" data-f="mno" data-live="1" placeholder="اختياري" value="${esc(F.mno||'')}"></label>
+        <label class="f"><span>${CFG.party}</span><input id="m-party" data-f="mparty" data-live="1" placeholder="اختياري" value="${esc(F.mparty||'')}"></label>
+        <label class="f"><span>الصنف *</span>
+          <input id="mq" data-f="mq" data-live="1" autocomplete="off" value="${esc(F.mq||'')}" placeholder="اكتب جزءًا من اسم الصنف... مثال: فازه">
+          ${picked?`<div style="font-size:11.5px;color:var(--txt2);margin-top:4px">✓ ${esc(picked.name)} — المتاح حاليًا ${fmt(bal(picked.id))} ${esc(picked.unit)}${VIEW==='all'?` <span class="badge-branch">${esc(picked.branch||DEFAULT_BRANCH)}</span>`:''}</div>`:''}
+        </label>
+        <label class="f"><span>الكمية *</span><input id="m-qty" data-f="mqty" data-live="1" type="number" step="any" min="0" placeholder="0" value="${esc(F.mqty||'')}"></label>
+        <label class="f"><span>ملاحظات</span><input id="m-notes" data-f="mnotes" data-live="1" placeholder="اختياري" value="${esc(F.mnotes||'')}"></label>
+      </div>
+      ${showList?`<div style="margin-top:10px">
+        ${matches.length?`<div class="btnrow">${matches.map(i=>`<button type="button" class="btn sm" data-a="pickitem" data-id="${i.id}">${esc(i.name)} <span style="color:var(--txt2)">(متاح ${fmt(bal(i.id))} ${esc(i.unit)})</span>${VIEW==='all'?` <span class="badge-branch">${esc(i.branch||DEFAULT_BRANCH)}</span>`:''}</button>`).join('')}</div>`
+        :`<div style="font-size:12.5px;color:var(--txt2)">لا يوجد صنف مطابق لـ «${esc(q)}»</div>`}
+      </div>`:''}
+      <div class="btnrow" style="margin-top:12px">
+        <button class="btn primary" data-a="addmove" data-type="${V}">${CFG.btn}</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>السجل</h3><span class="sub">${rows.length} عملية — إجمالي ${fmt(total)}</span></div>
+    <div class="card-b" style="border-bottom:1px solid var(--line2)">
+      <div class="grid g2">
+        <label class="f"><span>الصنف</span><select data-f="item"><option value="">الكل</option>
+          ${visItems().map(i=>`<option value="${i.id}" ${F.item===i.id?'selected':''}>${esc(i.name)}</option>`).join('')}</select></label>
+        <label class="f"><span>التصنيف</span><select data-f="mcat"><option value="">الكل</option>
+          ${allCats().map(c=>`<option value="${esc(c)}" ${F.mcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+        <label class="f"><span>من تاريخ</span><input type="date" data-f="from" value="${esc(F.from||'')}"></label>
+        <label class="f"><span>إلى تاريخ</span><input type="date" data-f="to" value="${esc(F.to||'')}"></label>
+      </div>
+    </div>
+    <div class="tblwrap">
+    ${rows.length?`<table><thead><tr><th>التاريخ</th><th>رقم العملية</th><th>${CFG.party}</th>
+      <th>الصنف</th><th>التصنيف</th><th class="num">الكمية</th><th>الوحدة</th><th>ملاحظات</th><th>أضافها</th><th></th></tr></thead>
+      <tbody>${rows.map(m=>{const i=it(m.itemId)||{};return `<tr>
+        <td>${dH(m.date)}</td><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
+        <td class="wrap"><b>${esc(i.name)}</b></td><td style="color:var(--txt2)">${esc(i.category)||'—'}</td><td class="num">${fmt(m.qty)}</td><td>${esc(i.unit)}</td>
+        <td class="wrap" style="color:var(--txt2)">${esc(m.notes)||'—'}</td>
+        <td style="font-size:11.5px;color:var(--txt2)">${esc(m.by)||'—'}</td>
+        <td><button class="btn ghost sm" data-a="delmove" data-id="${m.id}">حذف</button></td></tr>`}).join('')}</tbody>
+      <tfoot><tr><td colspan="5">الإجمالي</td><td class="num">${fmt(total)}</td><td colspan="4"></td></tr></tfoot></table>`
+    :`<div class="empty"><strong>لا توجد عمليات</strong>سجّل أول عملية من النموذج بالأعلى.</div>`}
+    </div>
+  </div>`;
+}
+
+/* ---------- 5) التقرير الشهري ---------- */
+function vRep(){
+  const months=Array.from(new Set(visMoves().map(m=>ym(m.date)))).filter(Boolean).sort().reverse();
+  if(!months.length)months.push(ym(today()));
+  const cur=F.ym||months[0];
+  const type=F.type||'out';
+  const prev=cur+'-00';
+
+  const rows=visItems().filter(i=>!F.rcat||(i.category||'')===F.rcat).map(i=>{
+    const mv=DB.moves.filter(m=>m.itemId===i.id&&ym(m.date)===cur);
+    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
+    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
+    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
+    const cnt=mv.filter(m=>m.type===type).length;
+    const open=bal(i.id,prev);
+    return {i,inQ,outQ,dmQ,cnt,open,close:open+inQ-outQ-dmQ,det:mv.filter(m=>m.type===type).sort((a,b)=>a.date.localeCompare(b.date))};
+  }).filter(r=>({in:r.inQ,out:r.outQ,damage:r.dmQ}[type])>0)
+    .sort((a,b)=>({in:b.inQ-a.inQ,out:b.outQ-a.outQ,damage:b.dmQ-a.dmQ})[type]);
+
+  const tot=rows.reduce((a,r)=>a+({in:r.inQ,out:r.outQ,damage:r.dmQ}[type]),0);
+  const totC=rows.reduce((a,r)=>a+r.cnt,0);
+  const partyLabel=type==='in'?'المورد':(type==='out'?'العميل / الجهة':'سبب التلف');
+  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
+  const em=t=>t===type?' style="font-size:15px;font-weight:800"':'';
+
+  return `
+  <div class="pagehead"><h2>التقرير الشهري</h2><p>اختر الشهر لعرض كل صنف تحرّك خلاله وتفاصيل عملياته.</p></div>
+
+  <div class="card"><div class="card-b"><div class="grid g2">
+    <label class="f"><span>الشهر</span><select data-f="ym">${months.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${mName(m)}</option>`).join('')}</select></label>
+    <label class="f"><span>نوع الحركة</span><select data-f="type">
+      <option value="out" ${type==='out'?'selected':''}>المنصرف</option>
+      <option value="in" ${type==='in'?'selected':''}>الوارد</option>
+      <option value="damage" ${type==='damage'?'selected':''}>التالف</option></select></label>
+    <label class="f"><span>التصنيف</span><select data-f="rcat"><option value="">كل التصنيفات</option>
+      ${allCats().map(c=>`<option value="${esc(c)}" ${F.rcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+  </div>
+  <div class="btnrow" style="margin-top:12px">
+    <button class="btn" data-a="print">طباعة / PDF</button>
+    <button class="btn" data-a="excel">تصدير Excel</button>
+  </div></div></div>
+
+  <div class="card">
+    <div class="card-h"><h3>${typeTitle} — ${mName(cur)}</h3>
+      <span class="sub">${rows.length} صنف · إجمالي الكمية ${fmt(tot)}</span></div>
+    <div class="tblwrap">
+    ${rows.length?`<table><thead><tr>
+      <th>اسم الصنف</th><th>التصنيف</th><th>الوحدة</th><th class="num">رصيد أول الشهر</th><th class="num">الوارد</th>
+      <th class="num">المنصرف</th><th class="num">التالف</th><th class="num">عدد المرات</th><th class="num">رصيد آخر الشهر</th><th></th></tr></thead>
+      <tbody>${rows.map((r,k)=>`
+        <tr><td class="wrap"><b>${esc(r.i.name)}</b></td><td style="color:var(--txt2)">${esc(r.i.category)||'—'}</td><td>${esc(r.i.unit)}</td>
+          <td class="num">${fmt(r.open)}</td><td class="num"${em('in')}>${fmt(r.inQ)}</td>
+          <td class="num"${em('out')}>${fmt(r.outQ)}</td><td class="num"${em('damage')}>${fmt(r.dmQ)}</td>
+          <td class="num">${fmt(r.cnt)}</td><td class="num">${fmt(r.close)}</td>
+          <td><button class="btn ghost sm" data-a="toggle" data-k="${k}">${F.open===k?'إخفاء':'التفاصيل'}</button></td></tr>
+        ${F.open===k?`<tr class="detail"><td colspan="10">
+          <table style="margin:0"><thead><tr><th>التاريخ</th><th>رقم العملية</th><th>${partyLabel}</th><th class="num">الكمية</th><th>ملاحظات</th></tr></thead>
+          <tbody>${r.det.map(m=>`<tr><td>${dH(m.date)}</td><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
+            <td class="num">${fmt(m.qty)}</td><td class="wrap">${esc(m.notes)||'—'}</td></tr>`).join('')}</tbody></table>
+        </td></tr>`:''}`).join('')}</tbody>
+      <tfoot><tr><td colspan="4">الإجمالي</td>
+        <td class="num">${fmt(rows.reduce((a,r)=>a+r.inQ,0))}</td>
+        <td class="num">${fmt(rows.reduce((a,r)=>a+r.outQ,0))}</td>
+        <td class="num">${fmt(rows.reduce((a,r)=>a+r.dmQ,0))}</td>
+        <td class="num">${fmt(totC)}</td>
+        <td class="num">${fmt(rows.reduce((a,r)=>a+r.close,0))}</td><td></td></tr></tfoot></table>`
+    :`<div class="empty"><strong>لا توجد حركة في ${mName(cur)}</strong>اختر شهرًا آخر أو سجّل عملية جديدة.</div>`}
+    </div>
+  </div>`;
+}
+
+/* ---------- 6) التقرير اليومي ---------- */
+const dayBefore=d=>{const dt=new Date(d+'T00:00:00');dt.setDate(dt.getDate()-1);return dt.toISOString().slice(0,10)};
+function vRepDay(){
+  const days=Array.from(new Set(visMoves().map(m=>m.date))).filter(Boolean).sort().reverse();
+  if(!days.length)days.push(today());
+  const cur=F.day||days[0];
+  const type=F.dtype||'out';
+
+  const rows=visItems().filter(i=>!F.rdcat||(i.category||'')===F.rdcat).map(i=>{
+    const mv=DB.moves.filter(m=>m.itemId===i.id&&m.date===cur);
+    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
+    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
+    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
+    const cnt=mv.filter(m=>m.type===type).length;
+    const open=bal(i.id,dayBefore(cur));
+    return {i,inQ,outQ,dmQ,cnt,open,close:open+inQ-outQ-dmQ,det:mv.filter(m=>m.type===type)};
+  }).filter(r=>({in:r.inQ,out:r.outQ,damage:r.dmQ}[type])>0)
+    .sort((a,b)=>({in:b.inQ-a.inQ,out:b.outQ-a.outQ,damage:b.dmQ-a.dmQ})[type]);
+
+  const tot=rows.reduce((a,r)=>a+({in:r.inQ,out:r.outQ,damage:r.dmQ}[type]),0);
+  const totC=rows.reduce((a,r)=>a+r.cnt,0);
+  const partyLabel=type==='in'?'المورد':(type==='out'?'العميل / الجهة':'سبب التلف');
+  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
+  const em=t=>t===type?' style="font-size:15px;font-weight:800"':'';
+
+  return `
+  <div class="pagehead"><h2>التقرير اليومي</h2><p>اختر يومًا لعرض كل صنف تحرّك خلاله وتفاصيل عملياته.</p></div>
+
+  <div class="card"><div class="card-b"><div class="grid g2">
+    <label class="f"><span>اليوم</span><input type="date" data-f="day" value="${esc(cur)}"></label>
+    <label class="f"><span>نوع الحركة</span><select data-f="dtype">
+      <option value="out" ${type==='out'?'selected':''}>المنصرف</option>
+      <option value="in" ${type==='in'?'selected':''}>الوارد</option>
+      <option value="damage" ${type==='damage'?'selected':''}>التالف</option></select></label>
+    <label class="f"><span>التصنيف</span><select data-f="rdcat"><option value="">كل التصنيفات</option>
+      ${allCats().map(c=>`<option value="${esc(c)}" ${F.rdcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+  </div>
+  <div class="btnrow" style="margin-top:12px">
+    <button class="btn" data-a="printday">طباعة / PDF</button>
+    <button class="btn" data-a="excelday">تصدير Excel</button>
+  </div></div></div>
+
+  <div class="card">
+    <div class="card-h"><h3>${typeTitle} — ${dH(cur)}</h3>
+      <span class="sub">${rows.length} صنف · إجمالي الكمية ${fmt(tot)}</span></div>
+    <div class="tblwrap">
+    ${rows.length?`<table><thead><tr>
+      <th>اسم الصنف</th><th>التصنيف</th><th>الوحدة</th><th class="num">رصيد أول اليوم</th><th class="num">الوارد</th>
+      <th class="num">المنصرف</th><th class="num">التالف</th><th class="num">عدد المرات</th><th class="num">رصيد آخر اليوم</th><th></th></tr></thead>
+      <tbody>${rows.map((r,k)=>`
+        <tr><td class="wrap"><b>${esc(r.i.name)}</b></td><td style="color:var(--txt2)">${esc(r.i.category)||'—'}</td><td>${esc(r.i.unit)}</td>
+          <td class="num">${fmt(r.open)}</td><td class="num"${em('in')}>${fmt(r.inQ)}</td>
+          <td class="num"${em('out')}>${fmt(r.outQ)}</td><td class="num"${em('damage')}>${fmt(r.dmQ)}</td>
+          <td class="num">${fmt(r.cnt)}</td><td class="num">${fmt(r.close)}</td>
+          <td><button class="btn ghost sm" data-a="toggle" data-k="${k}">${F.open===k?'إخفاء':'التفاصيل'}</button></td></tr>
+        ${F.open===k?`<tr class="detail"><td colspan="10">
+          <table style="margin:0"><thead><tr><th>رقم العملية</th><th>${partyLabel}</th><th class="num">الكمية</th><th>ملاحظات</th></tr></thead>
+          <tbody>${r.det.map(m=>`<tr><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
+            <td class="num">${fmt(m.qty)}</td><td class="wrap">${esc(m.notes)||'—'}</td></tr>`).join('')}</tbody></table>
+        </td></tr>`:''}`).join('')}</tbody>
+      <tfoot><tr><td colspan="4">الإجمالي</td>
+        <td class="num">${fmt(rows.reduce((a,r)=>a+r.inQ,0))}</td>
+        <td class="num">${fmt(rows.reduce((a,r)=>a+r.outQ,0))}</td>
+        <td class="num">${fmt(rows.reduce((a,r)=>a+r.dmQ,0))}</td>
+        <td class="num">${fmt(totC)}</td>
+        <td class="num">${fmt(rows.reduce((a,r)=>a+r.close,0))}</td><td></td></tr></tfoot></table>`
+    :`<div class="empty"><strong>لا توجد حركة في ${dH(cur)}</strong>اختر يومًا آخر أو سجّل عملية جديدة.</div>`}
+    </div>
+  </div>`;
+}
+
+/* ---------- الطباعة والتصدير ---------- */
+function repData(){
+  const months=Array.from(new Set(visMoves().map(m=>ym(m.date)))).sort().reverse();
+  const cur=F.ym||months[0]||ym(today()); const type=F.type||'out';
+  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
+  const head=['اسم الصنف','التصنيف','الوحدة','رصيد أول الشهر','الوارد','المنصرف','التالف','عدد المرات','رصيد آخر الشهر'];
+  const body=[];
+  visItems().filter(i=>!F.rcat||(i.category||'')===F.rcat).forEach(i=>{
+    const mv=DB.moves.filter(m=>m.itemId===i.id&&ym(m.date)===cur);
+    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
+    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
+    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
+    if(!({in:inQ,out:outQ,damage:dmQ}[type]))return;
+    const open=bal(i.id,cur+'-00');
+    body.push([i.name,i.category||'—',i.unit,fmt(open),fmt(inQ),fmt(outQ),fmt(dmQ),fmt(mv.filter(m=>m.type===type).length),fmt(open+inQ-outQ-dmQ)]);
+  });
+  return {title:`تقرير ${typeTitle} — ${mName(cur)}`,head,body};
+}
+function repDataDay(){
+  const days=Array.from(new Set(visMoves().map(m=>m.date))).sort().reverse();
+  const cur=F.day||days[0]||today(); const type=F.dtype||'out';
+  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
+  const head=['اسم الصنف','التصنيف','الوحدة','رصيد أول اليوم','الوارد','المنصرف','التالف','عدد المرات','رصيد آخر اليوم'];
+  const body=[];
+  visItems().filter(i=>!F.rdcat||(i.category||'')===F.rdcat).forEach(i=>{
+    const mv=DB.moves.filter(m=>m.itemId===i.id&&m.date===cur);
+    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
+    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
+    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
+    if(!({in:inQ,out:outQ,damage:dmQ}[type]))return;
+    const open=bal(i.id,dayBefore(cur));
+    body.push([i.name,i.category||'—',i.unit,fmt(open),fmt(inQ),fmt(outQ),fmt(dmQ),fmt(mv.filter(m=>m.type===type).length),fmt(open+inQ-outQ-dmQ)]);
+  });
+  return {title:`تقرير ${typeTitle} — ${dH(cur)}`,head,body};
+}
+function printRep(r){
+  $('#print-zone').innerHTML=`<h2 style="margin:0 0 4px">${esc(r.title)}</h2>
+    <div style="font-size:11px;color:#555;border-bottom:1px solid #999;padding-bottom:6px;margin-bottom:10px">نظام المخزون — كميات فقط · تاريخ الطباعة ${dH(today())}</div>
+    ${r.body.length?`<table><thead><tr>${r.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${r.body.map(x=>`<tr>${x.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`:'<p>لا توجد بيانات.</p>'}`;
+  setTimeout(()=>print(),60);
+}
+function excelRep(r){
+  if(!r.body.length)return toast('لا توجد بيانات للتصدير.','bad');
+  const html=`<html dir="rtl"><head><meta charset="utf-8"></head><body><table border="1">
+    <tr><th colspan="${r.head.length}">${esc(r.title)}</th></tr>
+    <tr>${r.head.map(h=>`<th>${h}</th>`).join('')}</tr>
+    ${r.body.map(x=>`<tr>${x.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
+  dl(new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'}),r.title+'.xls');
+}
+function doPrint(){printRep(repData())}
+function doExcel(){excelRep(repData())}
+function doPrintDay(){printRep(repDataDay())}
+function doExcelDay(){excelRep(repDataDay())}
+function dl(blob,name){
+  try{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;
+    document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1200);toast('تم تجهيز الملف.')}
+  catch(e){toast('تعذّر التنزيل هنا، استخدم الطباعة.','bad')}
+}
+
+/* ---------- الأحداث ---------- */
+function bind(){
+  const R=$('#view');
+  R.querySelectorAll('[data-f]').forEach(el=>{
+    const evt=el.dataset.live?'input':'change';
+    el.addEventListener(evt,()=>{F[el.dataset.f]=el.value;delete F.open;render()});
+  });
+  R.querySelectorAll('[data-a]').forEach(el=>{
+    const a=el.dataset.a;
+    if(a==='restore'){el.onchange=e=>restore(e.target.files[0]);return}
+    el.onclick=()=>{
+      switch(a){
+        case 'goopen':go('open');break;
+        case 'additem':{
+          const nm=$('#a-name').value.trim();
+          const cat=($('#a-cat').value||'').trim();
+          const unit=($('#a-unit').value||'').trim()||'حبة';
+          const br=CUR_ALL?($('#a-branch')?$('#a-branch').value:DEFAULT_BRANCH):CUR_BRANCH;
+          if(!nm)return toast('اكتب اسم الصنف.','bad');
+          if(DB.items.some(i=>i.name===nm&&(i.branch||DEFAULT_BRANCH)===br))return toast('هذا الصنف موجود بالفعل بهذا الفرع.','bad');
+          DB.items.push({id:uid(),name:nm,category:cat,unit,opening:n($('#a-open').value),min:n($('#a-min').value),branch:br});
+          save();render();toast('تمت إضافة الصنف.');break}
+        case 'saveopen':{
+          R.querySelectorAll('[data-op]').forEach(x=>{const i=it(x.dataset.op);if(i)i.opening=n(x.value)});
+          R.querySelectorAll('[data-mn]').forEach(x=>{const i=it(x.dataset.mn);if(i)i.min=n(x.value)});
+          R.querySelectorAll('[data-cat]').forEach(x=>{const i=it(x.dataset.cat);if(i)i.category=x.value.trim()});
+          R.querySelectorAll('[data-unit]').forEach(x=>{const i=it(x.dataset.unit);if(i&&x.value.trim())i.unit=x.value.trim()});
+          save();render();toast('تم الحفظ وتحديث الأرصدة.');break}
+        case 'delitem':{
+          const id=el.dataset.id,i=it(id);
+          const used=DB.moves.some(m=>m.itemId===id);
+          if(!confirm(used?`«${i.name}» له عمليات مسجّلة، وسيتم حذفها معه. متابعة؟`:`حذف الصنف «${i.name}»؟`))return;
+          DB.moves=DB.moves.filter(m=>m.itemId!==id);
+          DB.items=DB.items.filter(x=>x.id!==id);
+          save();render();toast('تم الحذف.');break}
+        case 'pickitem':{
+          const i=it(el.dataset.id);
+          if(i){F.mid=i.id;F.mq=i.name;render();}
+          break}
+        case 'addmove':{
+          const type=el.dataset.type, iid=F.mid, q=n(F.mqty);
+          if(!iid)return toast('اختر الصنف من نتائج البحث أولاً.','bad');
+          if(q<=0)return toast('أدخل كمية أكبر من صفر.','bad');
+          if(type==='out'||type==='damage'){
+            const av=bal(iid);
+            if(q>av)return toast(`المتاح من «${it(iid).name}» هو ${fmt(av)} فقط.`,'bad');
+          }
+          DB.moves.push({id:uid(),type,date:F.mdate||today(),no:(F.mno||'').trim(),
+            party:(F.mparty||'').trim(),itemId:iid,qty:q,notes:(F.mnotes||'').trim(),by:CUR_EMAIL||''});
+          const i2=it(iid),b=bal(iid),s=st(b,i2.min);
+          delete F.mq;delete F.mid;delete F.mdate;delete F.mno;delete F.mparty;delete F.mqty;delete F.mnotes;
+          save();render();
+          const msg=type==='in'?`تمت الإضافة. رصيد ${i2.name} الآن ${fmt(b)} ${i2.unit}`
+            :type==='out'?`تم الخصم. تبقّى ${fmt(b)} ${i2.unit} من ${i2.name}`
+            :`تم تسجيل التالف. تبقّى ${fmt(b)} ${i2.unit} من ${i2.name}`;
+          toast(msg);
+          if(s.k!=='ok')setTimeout(()=>toast(`${i2.name}: ${s.t}`,'bad'),700);
+          break}
+        case 'delmove':{
+          if(!confirm('حذف هذه العملية؟ سيُعاد حساب الرصيد تلقائيًا.'))return;
+          DB.moves=DB.moves.filter(m=>m.id!==el.dataset.id);save();render();toast('تم الحذف وتحديث الرصيد.');break}
+        case 'toggle':{const k=+el.dataset.k;F.open=F.open===k?null:k;render();break}
+        case 'print':doPrint();break;
+        case 'excel':doExcel();break;
+        case 'printday':doPrintDay();break;
+        case 'excelday':doExcelDay();break;
+        case 'backup':{
+          const data=VIEW==='all'?DB:{items:visItems(),moves:visMoves()};
+          dl(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),`نسخة_المخزون_${today()}.json`);break}
+      }
+    };
+  });
+}
+function restore(f){
+  if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.items)throw 0;
+    DB.items=d.items;DB.moves=d.moves||[];save();go('open');toast('تم استيراد النسخة.')}
+    catch(e){toast('الملف غير صالح.','bad')}};
+  r.readAsText(f);
+}
+
+/* ---------- الإعدادات (تغيير كلمة المرور) ---------- */
+function openSettings(){
+  const box=$('#settings-modal');
+  box.innerHTML=`
+  <div class="modal-bg" id="sm-bg">
+    <div class="modal card">
+      <div class="card-h"><h3>الإعدادات</h3><button class="btn ghost sm" id="sm-close">إغلاق</button></div>
+      <div class="card-b">
+        <div class="who">البريد: <b>${esc(CUR_EMAIL||'')}</b><span class="badge-branch">${VIEW==='all'?'كل الفروع':esc(VIEW)}</span></div>
+        <h3 style="font-size:13.5px;margin-bottom:10px">تغيير كلمة المرور</h3>
+        <div class="grid" style="gap:10px">
+          <label class="f"><span>كلمة المرور الحالية</span><input id="sm-cur" type="password" autocomplete="current-password"></label>
+          <label class="f"><span>كلمة المرور الجديدة</span><input id="sm-new" type="password" autocomplete="new-password" placeholder="6 أحرف على الأقل"></label>
+          <label class="f"><span>تأكيد كلمة المرور الجديدة</span><input id="sm-new2" type="password" autocomplete="new-password"></label>
+        </div>
+        <div class="btnrow" style="margin-top:14px"><button class="btn primary" id="sm-save">تحديث كلمة المرور</button></div>
+        <div class="err" id="sm-err"></div>
+      </div>
+    </div>
+  </div>`;
+  $('#sm-close').onclick=()=>box.innerHTML='';
+  $('#sm-bg').onclick=e=>{if(e.target.id==='sm-bg')box.innerHTML=''};
+  $('#sm-save').onclick=async()=>{
+    const cur=$('#sm-cur').value, nw=$('#sm-new').value, nw2=$('#sm-new2').value;
+    const err=$('#sm-err');err.textContent='';
+    if(!cur||!nw)return err.textContent='عبّي كل الحقول.';
+    if(nw.length<6)return err.textContent='كلمة المرور الجديدة لازم تكون 6 أحرف على الأقل.';
+    if(nw!==nw2)return err.textContent='كلمتا المرور الجديدتان غير متطابقتين.';
+    try{
+      const user=firebase.auth().currentUser;
+      const cred=firebase.auth.EmailAuthProvider.credential(user.email,cur);
+      await user.reauthenticateWithCredential(cred);
+      await user.updatePassword(nw);
+      box.innerHTML='';toast('تم تحديث كلمة المرور.');
+    }catch(e){err.textContent=authErr(e.code);}
+  };
+}
+function authErr(code){
+  return {
+    'auth/wrong-password':'كلمة المرور الحالية غير صحيحة.',
+    'auth/invalid-credential':'كلمة المرور الحالية غير صحيحة.',
+    'auth/user-not-found':'الحساب غير موجود.',
+    'auth/invalid-email':'صيغة البريد الإلكتروني غير صحيحة.',
+    'auth/too-many-requests':'محاولات كثيرة، حاول لاحقًا.',
+    'auth/weak-password':'كلمة المرور ضعيفة، اختر كلمة أقوى.',
+    'auth/network-request-failed':'تعذّر الاتصال بالإنترنت.'
+  }[code] || 'صار خطأ، حاول مرة ثانية.';
+}
+
+/* ---------- تسجيل الدخول والخروج ---------- */
+let dbHandleBound=false;
+function updateStatusText(){
+  const s=$('#sync-status');
+  if(!s)return;
+  const conn=fbRef?'متصل ويُحدَّث لحظيًا':'الحفظ محلي فقط على هذا الجهاز';
+  s.textContent=`كميات فقط · ${VIEW==='all'?'كل الفروع':VIEW} · ${conn}`;
+}
+function paintBranchWidget(){
+  const isAll=VIEW==='all';
+  const el=$('#branch-select')||$('#branch-badge');
+  if(el){el.style.background=isAll?'#FBF0DC':'#E4F1EE';el.style.color=isAll?'#8A5A08':'#0A5B52';}
+}
+function buildBranchWidget(){
+  const bw=$('#branch-widget');
+  if(CUR_ALL){
+    bw.innerHTML=`<select id="branch-select" class="badge-branch">
+      <option value="all">كل الفروع</option>
+      ${BRANCHES.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('')}
+    </select>`;
+    $('#branch-select').value=VIEW;
+    $('#branch-select').onchange=e=>{VIEW=e.target.value;paintBranchWidget();updateStatusText();F={};render();};
+  }else{
+    bw.innerHTML=`<span class="badge-branch" id="branch-badge">${esc(CUR_BRANCH)}</span>`;
+  }
+  paintBranchWidget();
+}
+function startSync(){
+  const s=$('#sync-status');
+  if(fbRef){
+    updateStatusText();
+    fbRef.on('value', snap=>{
+      const d=snap.exists()?snap.val():{items:[],moves:[]};
+      const raw=JSON.stringify(d);
+      if(raw!==lastSyncedRaw){
+        const first=lastSyncedRaw===null;
+        lastSyncedRaw=raw;
+        DB.items=d.items||[]; DB.moves=d.moves||[];
+        render();
+        if(!first)toast('تم تحديث البيانات — تعديل من مستخدم آخر');
+      }
+    }, ()=>{noStore=true; if(s)s.textContent='تعذّر الاتصال بقاعدة البيانات المشتركة'; toast('تعذّر الاتصال — تحقّق من الإنترنت.','bad')});
+  }else{
+    try{const raw=localStorage.getItem(KEY);
+      if(raw){lastSyncedRaw=raw;const d=JSON.parse(raw);DB.items=d.items||[];DB.moves=d.moves||[];render()}}catch(e){}
+    noStore=true;
+    if(s)s.textContent='تعذّر الاتصال بقاعدة البيانات المشتركة — يتم الحفظ على هذا الجهاز فقط';
+    toast('تعذّر تحميل خدمة المزامنة — الحفظ محلي فقط على هذا الجهاز.','bad');
+  }
+}
+$('#lg-btn').onclick=()=>{
+  const email=$('#lg-email').value.trim(), pass=$('#lg-pass').value;
+  const err=$('#lg-err');err.textContent='';
+  if(!email||!pass)return err.textContent='عبّي البريد وكلمة المرور.';
+  $('#lg-btn').disabled=true;
+  firebase.auth().signInWithEmailAndPassword(email,pass)
+    .catch(e=>{err.textContent=authErr(e.code);})
+    .finally(()=>{$('#lg-btn').disabled=false});
+};
+$('#lg-pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#lg-btn').click()});
+$('#btn-logout').onclick=()=>{if(confirm('تسجيل الخروج؟'))firebase.auth().signOut();};
+$('#btn-settings').onclick=openSettings;
+
+if(fbRef){
+  firebase.auth().onAuthStateChanged(user=>{
+    if(user){
+      CUR_EMAIL=user.email; const a=access(CUR_EMAIL); CUR_ALL=a.branch==='all'; CUR_BRANCH=CUR_ALL?null:a.branch;
+      VIEW=CUR_ALL?'all':CUR_BRANCH;
+      $('#gate').style.display='none'; $('#app').style.display='';
+      $('#lg-email').value='';$('#lg-pass').value='';
+      buildBranchWidget();
+      if(!dbHandleBound){dbHandleBound=true;startSync();}else{render()}
+    }else{
+      CUR_EMAIL=null;CUR_BRANCH=null;CUR_ALL=false;VIEW=null;
+      $('#gate').style.display='';$('#app').style.display='none';
+      if(fbRef){try{fbRef.off()}catch(e){}}
+      dbHandleBound=false; DB={items:[],moves:[]};
+    }
+  });
+}else{
+  // بدون Firebase (تعذّر تحميل المكتبة) — يتعذّر تسجيل الدخول، لا نعرض التطبيق
+  $('#lg-err').textContent='تعذّر تحميل خدمة الدخول — تأكد من الاتصال بالإنترنت.';
+}
+</script>
+</body>
+</html>
