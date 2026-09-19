@@ -142,6 +142,7 @@ let CUR_EMAIL=null, CUR_BRANCH=null, CUR_ALL=false, VIEW=null;
 const access=email=>ACCESS_MAP[(email||'').toLowerCase()]||{branch:DEFAULT_BRANCH};
 /* الأصناف/الحركات المرئية حسب الفرع المختار حاليًا للعرض (VIEW) */
 const visItems=()=>VIEW==='all'?DB.items:DB.items.filter(i=>(i.branch||DEFAULT_BRANCH)===VIEW);
+const activeItems=()=>visItems().filter(i=>!i.archived);
 const visMoves=()=>{const ids=new Set(visItems().map(i=>i.id));return DB.moves.filter(m=>ids.has(m.itemId))};
 
 const $=s=>document.querySelector(s);
@@ -155,6 +156,11 @@ const ym=s=>(s||'').slice(0,7);
 const M=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 const mName=v=>{const[y,m]=(v||'').split('-');return m?`${M[+m-1]} ${y}`:'—'};
 const it=id=>DB.items.find(i=>i.id===id);
+/* تطبيع اسم الصنف: يوحّد المسافات الزايدة وفروقات الهمزة/التاء المربوطة/الألف المقصورة
+   عشان "ورد احمر" و"ورد أحمر" يتعاملوا كنفس الصنف بفحص التكرار والبحث */
+const normName=s=>String(s||'').trim().replace(/\s+/g,' ').replace(/[إأآا]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').toLowerCase();
+const sameName=(a,b)=>normName(a)===normName(b);
+const matchName=(name,q)=>normName(name).includes(normName(q));
 const DEFAULT_CATS=['عطور','فازات','شوكلت','تغليف'];
 const allCats=()=>[...new Set([...DEFAULT_CATS,...DB.items.map(i=>i.category).filter(Boolean)])];
 const allUnits=()=>[...new Set([...UNITS,...DB.items.map(i=>i.unit).filter(Boolean)])];
@@ -170,14 +176,31 @@ const firebaseConfig = {
 let fbRef=null;
 try{ firebase.initializeApp(firebaseConfig); fbRef=firebase.database().ref(KEY); }catch(e){fbRef=null}
 
-let lastSyncedRaw=null;
-let tm;function save(){clearTimeout(tm);tm=setTimeout(async()=>{
-  try{
-    lastSyncedRaw=JSON.stringify(DB);
-    if(fbRef){await fbRef.set(DB)}
-    else{localStorage.setItem(KEY,lastSyncedRaw)}
-  }catch(e){noStore=true}
+/* الحفظ صار لكل سجل (صنف/حركة) على حدة بدل استبدال القاعدة كلها —
+   يمنع ضياع تعديل موظف إذا كتب موظف ثاني بنفس اللحظة تقريبًا على صنف/حركة مختلفة */
+let tm;function saveLocalOnly(){clearTimeout(tm);tm=setTimeout(()=>{
+  try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){noStore=true}
 },200)}
+async function fbWrite(paths){
+  if(!fbRef){saveLocalOnly();return}
+  try{await fbRef.update(paths)}
+  catch(e){noStore=true;toast('تعذّر الحفظ — تحقّق من الاتصال بالإنترنت.','bad')}
+}
+const saveItem=i=>fbWrite({[`items/${i.id}`]:i});
+const saveItemFields=(id,fields)=>{const p={};Object.keys(fields).forEach(k=>p[`items/${id}/${k}`]=fields[k]);return fbWrite(p)};
+const deleteItemRemote=id=>fbWrite({[`items/${id}`]:null});
+const saveMove=m=>fbWrite({[`moves/${m.id}`]:m});
+const deleteMoveRemote=id=>fbWrite({[`moves/${id}`]:null});
+/* استبدال كامل (مستخدم فقط عند استيراد نسخة احتياطية يدويًا) */
+async function fbReplaceAll(){
+  if(!fbRef){saveLocalOnly();return}
+  try{
+    const itemsKeyed={};DB.items.forEach(i=>itemsKeyed[i.id]=i);
+    const movesKeyed={};DB.moves.forEach(m=>movesKeyed[m.id]=m);
+    await fbRef.child('items').set(itemsKeyed);
+    await fbRef.child('moves').set(movesKeyed);
+  }catch(e){noStore=true;toast('تعذّر الحفظ — تحقّق من الاتصال بالإنترنت.','bad')}
+}
 
 /* الرصيد الحالي = افتتاحي + وارد − منصرف */
 function bal(id,upto){
@@ -193,7 +216,7 @@ const st=(b,min)=> n(b)<=0?{k:'zero',t:'نفد'} : (n(min)>0&&n(b)<=n(min)?{k:'l
 const BRANCH_WHATS={'الفرع الرئيسي':'966533228036','فرع الرياض':'966501027553'};
 const WHATS_NUM='966533228036'; // احتياطي لو الفرع غير معروف
 const waLink=(text,branch)=>`https://wa.me/${BRANCH_WHATS[branch]||WHATS_NUM}?text=${encodeURIComponent(text)}`;
-const lowItems=()=>visItems().map(i=>({i,b:bal(i.id)})).filter(x=>st(x.b,x.i.min).k!=='ok');
+const lowItems=()=>activeItems().map(i=>({i,b:bal(i.id)})).filter(x=>st(x.b,x.i.min).k!=='ok');
 const lowMsg=(i,b)=>`⚠️ تنبيه مخزون\nالصنف: ${i.name}\nالمتبقي: ${fmt(b)} ${i.unit}\nالحد الأدنى: ${fmt(i.min)} ${i.unit}\nالحالة: ${st(b,i.min).t}`;
 const allLowMsg=list=>`⚠️ تنبيه مخزون — أصناف منخفضة (${list.length})\n\n`+list.map(x=>`• ${x.i.name}: متبقي ${fmt(x.b)} ${x.i.unit} (الحد الأدنى ${fmt(x.i.min)})`).join('\n');
 
@@ -215,8 +238,8 @@ function render(){
 /* ---------- 1) الرصيد الافتتاحي (وهو أيضًا سجل الأصناف) ---------- */
 function vOpen(){
   const q=(F.q||'').trim();
-  let list=visItems().slice().sort((a,b)=>a.name.localeCompare(b.name,'ar'));
-  if(q)list=list.filter(i=>i.name.toLowerCase().includes(q.toLowerCase()));
+  let list=(F.showArch?visItems().filter(i=>i.archived):activeItems()).slice().sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+  if(q)list=list.filter(i=>matchName(i.name,q));
   if(F.qcat)list=list.filter(i=>(i.category||'')===F.qcat);
   const low=lowItems();
   const lowByBranch={};
@@ -261,7 +284,12 @@ function vOpen(){
   </div>
 
   <div class="card">
-    <div class="card-h"><h3>الأصناف والأرصدة${VIEW==='all'?'':` — ${esc(VIEW)}`}</h3><span class="sub">${list.length} صنف${q?` من ${visItems().length}`:''}</span></div>
+    <div class="card-h"><h3>${F.showArch?'الأصناف المؤرشفة':'الأصناف والأرصدة'}${VIEW==='all'?'':` — ${esc(VIEW)}`}</h3>
+      <div class="btnrow">
+        <span class="sub">${list.length} صنف${q?` من ${(F.showArch?visItems().filter(i=>i.archived):activeItems()).length}`:''}</span>
+        <button class="btn ghost sm" data-a="togglearch">${F.showArch?'عرض الأصناف النشطة':'عرض الأصناف المؤرشفة'}</button>
+      </div>
+    </div>
     <div class="card-b" style="padding-bottom:0;border-bottom:1px solid var(--line2)">
       <div class="grid g2">
         <label class="f"><span>بحث عن صنف</span>
@@ -275,19 +303,22 @@ function vOpen(){
     ${list.length?`<table><thead><tr>
       <th>الصنف</th><th>التصنيف</th>${VIEW==='all'?'<th>الفرع</th>':''}<th>الوحدة</th><th class="num" style="min-width:120px">الرصيد الافتتاحي</th>
       <th class="num" style="min-width:110px">الحد الأدنى</th><th class="num">الرصيد الحالي</th><th>الحالة</th><th></th></tr></thead>
-      <tbody>${list.map(i=>{const b=bal(i.id),s=st(b,i.min);return `<tr>
-        <td class="wrap"><b>${esc(i.name)}</b></td>
-        <td><input list="cat-list" data-cat="${i.id}" value="${esc(i.category||'')}" placeholder="—" style="min-width:100px"></td>
+      <tbody>${list.map(i=>{const b=bal(i.id),s=st(b,i.min),arch=!!i.archived,used=DB.moves.some(m=>m.itemId===i.id);return `<tr${arch?' style="opacity:.65"':''}>
+        <td class="wrap"><b>${esc(i.name)}</b>${arch?' <span class="tag zero">مؤرشف</span>':''}</td>
+        <td><input list="cat-list" data-cat="${i.id}" value="${esc(i.category||'')}" placeholder="—" style="min-width:100px" ${arch?'disabled':''}></td>
         ${VIEW==='all'?`<td><span class="badge-branch">${esc(i.branch||DEFAULT_BRANCH)}</span></td>`:''}
-        <td><input list="units-list" data-unit="${i.id}" value="${esc(i.unit)}" style="min-width:80px"></td>
-        <td><input type="number" step="any" min="0" data-op="${i.id}" value="${n(i.opening)}"></td>
-        <td><input type="number" step="any" min="0" data-mn="${i.id}" value="${n(i.min)}"></td>
+        <td><input list="units-list" data-unit="${i.id}" value="${esc(i.unit)}" style="min-width:80px" ${arch?'disabled':''}></td>
+        <td><input type="number" step="any" min="0" data-op="${i.id}" value="${n(i.opening)}" ${arch?'disabled':''}></td>
+        <td><input type="number" step="any" min="0" data-mn="${i.id}" value="${n(i.min)}" ${arch?'disabled':''}></td>
         <td class="num" style="font-size:15px">${fmt(b)}</td>
-        <td><span class="tag ${s.k}">${s.t}</span></td>
-        <td><button class="btn ghost sm" data-a="delitem" data-id="${i.id}">حذف</button></td></tr>`}).join('')}</tbody>
+        <td>${arch?'—':`<span class="tag ${s.k}">${s.t}</span>`}</td>
+        <td>${arch?`<div class="btnrow">
+            <button class="btn ghost sm" data-a="restoreitem" data-id="${i.id}">استرجاع</button>
+            ${!used?`<button class="btn ghost sm danger" data-a="delitemhard" data-id="${i.id}">حذف نهائي</button>`:''}
+          </div>`:`<button class="btn ghost sm" data-a="delitem" data-id="${i.id}">أرشفة</button>`}</td></tr>`}).join('')}</tbody>
       <tfoot><tr><td colspan="${VIEW==='all'?4:3}">الإجمالي</td><td class="num">${fmt(list.reduce((a,i)=>a+n(i.opening),0))}</td><td></td>
         <td class="num">${fmt(list.reduce((a,i)=>a+bal(i.id),0))}</td><td colspan="2"></td></tr></tfoot></table>`
-    :`<div class="empty"><strong>${q?'لا يوجد صنف مطابق للبحث':'لا توجد أصناف بعد'}</strong>${q?'جرّب كلمة أخرى.':'أضف أول صنف من النموذج بالأعلى.'}</div>`}
+    :`<div class="empty"><strong>${q?'لا يوجد صنف مطابق للبحث':(F.showArch?'لا توجد أصناف مؤرشفة':'لا توجد أصناف بعد')}</strong>${q?'جرّب كلمة أخرى.':(F.showArch?'':'أضف أول صنف من النموذج بالأعلى.')}</div>`}
     </div>
     ${list.length?`<div class="card-b" style="border-top:1px solid var(--line2)">
       <button class="btn primary" data-a="saveopen">حفظ التعديلات</button>
@@ -316,6 +347,10 @@ function vMove(){
   if(F.to)rows=rows.filter(m=>m.date<=F.to);
   rows.sort((a,b)=>b.date.localeCompare(a.date));
   const total=rows.reduce((a,m)=>a+n(m.qty),0);
+  const PAGE_SIZE=50;
+  const totalPages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));
+  const page=Math.min(F.mpage||0,totalPages-1);
+  const pageRows=rows.slice(page*PAGE_SIZE,(page+1)*PAGE_SIZE);
 
   if(!visItems().length) return `<div class="card"><div class="empty"><strong>أضف الأصناف أولاً</strong>
     ابدأ من تبويب «الرصيد الافتتاحي».<br><button class="btn primary sm" style="margin-top:10px" data-a="goopen">الذهاب إلى الأصناف</button></div></div>`;
@@ -323,7 +358,7 @@ function vMove(){
   // اختيار الصنف بالبحث عن جزء من الاسم بدل القائمة المنسدلة
   if(F.mid && (!it(F.mid) || it(F.mid).name!==F.mq)) delete F.mid;
   const q=(F.mq||'').trim();
-  const matches=q?visItems().filter(i=>i.name.toLowerCase().includes(q.toLowerCase())).slice(0,10):[];
+  const matches=q?activeItems().filter(i=>matchName(i.name,q)).slice(0,10):[];
   const showList=q && !F.mid;
   const picked=F.mid?it(F.mid):null;
 
@@ -369,15 +404,20 @@ function vMove(){
     <div class="tblwrap">
     ${rows.length?`<table><thead><tr><th>التاريخ</th><th>رقم العملية</th><th>${CFG.party}</th>
       <th>الصنف</th><th>التصنيف</th><th class="num">الكمية</th><th>الوحدة</th><th>ملاحظات</th><th>أضافها</th><th></th></tr></thead>
-      <tbody>${rows.map(m=>{const i=it(m.itemId)||{};return `<tr>
+      <tbody>${pageRows.map(m=>{const i=it(m.itemId)||{};return `<tr>
         <td>${dH(m.date)}</td><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
         <td class="wrap"><b>${esc(i.name)}</b></td><td style="color:var(--txt2)">${esc(i.category)||'—'}</td><td class="num">${fmt(m.qty)}</td><td>${esc(i.unit)}</td>
         <td class="wrap" style="color:var(--txt2)">${esc(m.notes)||'—'}</td>
         <td style="font-size:11.5px;color:var(--txt2)">${esc(m.by)||'—'}</td>
         <td><button class="btn ghost sm" data-a="delmove" data-id="${m.id}">حذف</button></td></tr>`}).join('')}</tbody>
-      <tfoot><tr><td colspan="5">الإجمالي</td><td class="num">${fmt(total)}</td><td colspan="4"></td></tr></tfoot></table>`
+      <tfoot><tr><td colspan="5">الإجمالي (كل النتائج)</td><td class="num">${fmt(total)}</td><td colspan="4"></td></tr></tfoot></table>`
     :`<div class="empty"><strong>لا توجد عمليات</strong>سجّل أول عملية من النموذج بالأعلى.</div>`}
     </div>
+    ${totalPages>1?`<div class="card-b btnrow" style="border-top:1px solid var(--line2);align-items:center">
+      <button class="btn sm" data-a="mprev" ${page<=0?'disabled':''}>‹ السابق</button>
+      <span style="font-size:12px;color:var(--txt2)">صفحة ${page+1} من ${totalPages}</span>
+      <button class="btn sm" data-a="mnext" ${page>=totalPages-1?'disabled':''}>التالي ›</button>
+    </div>`:''}
   </div>`;
 }
 
@@ -588,7 +628,7 @@ function bind(){
   const R=$('#view');
   R.querySelectorAll('[data-f]').forEach(el=>{
     const evt=el.dataset.live?'input':'change';
-    el.addEventListener(evt,()=>{F[el.dataset.f]=el.value;delete F.open;render()});
+    el.addEventListener(evt,()=>{F[el.dataset.f]=el.value;delete F.open;delete F.mpage;render()});
   });
   R.querySelectorAll('[data-a]').forEach(el=>{
     const a=el.dataset.a;
@@ -602,22 +642,33 @@ function bind(){
           const unit=($('#a-unit').value||'').trim()||'حبة';
           const br=CUR_ALL?($('#a-branch')?$('#a-branch').value:DEFAULT_BRANCH):CUR_BRANCH;
           if(!nm)return toast('اكتب اسم الصنف.','bad');
-          if(DB.items.some(i=>i.name===nm&&(i.branch||DEFAULT_BRANCH)===br))return toast('هذا الصنف موجود بالفعل بهذا الفرع.','bad');
-          DB.items.push({id:uid(),name:nm,category:cat,unit,opening:n($('#a-open').value),min:n($('#a-min').value),branch:br});
-          save();render();toast('تمت إضافة الصنف.');break}
+          if(DB.items.some(i=>sameName(i.name,nm)&&(i.branch||DEFAULT_BRANCH)===br&&!i.archived))return toast('هذا الصنف موجود بالفعل بهذا الفرع.','bad');
+          const newItem={id:uid(),name:nm,category:cat,unit,opening:n($('#a-open').value),min:n($('#a-min').value),branch:br};
+          DB.items.push(newItem);
+          saveItem(newItem);render();toast('تمت إضافة الصنف.');break}
         case 'saveopen':{
-          R.querySelectorAll('[data-op]').forEach(x=>{const i=it(x.dataset.op);if(i)i.opening=n(x.value)});
-          R.querySelectorAll('[data-mn]').forEach(x=>{const i=it(x.dataset.mn);if(i)i.min=n(x.value)});
-          R.querySelectorAll('[data-cat]').forEach(x=>{const i=it(x.dataset.cat);if(i)i.category=x.value.trim()});
-          R.querySelectorAll('[data-unit]').forEach(x=>{const i=it(x.dataset.unit);if(i&&x.value.trim())i.unit=x.value.trim()});
-          save();render();toast('تم الحفظ وتحديث الأرصدة.');break}
+          R.querySelectorAll('[data-op]').forEach(x=>{const i=it(x.dataset.op);if(i){const v=n(x.value);if(v!==i.opening){i.opening=v;saveItemFields(i.id,{opening:v})}}});
+          R.querySelectorAll('[data-mn]').forEach(x=>{const i=it(x.dataset.mn);if(i){const v=n(x.value);if(v!==i.min){i.min=v;saveItemFields(i.id,{min:v})}}});
+          R.querySelectorAll('[data-cat]').forEach(x=>{const i=it(x.dataset.cat);if(i){const v=x.value.trim();if(v!==(i.category||'')){i.category=v;saveItemFields(i.id,{category:v})}}});
+          R.querySelectorAll('[data-unit]').forEach(x=>{const i=it(x.dataset.unit);if(i&&x.value.trim()){const v=x.value.trim();if(v!==i.unit){i.unit=v;saveItemFields(i.id,{unit:v})}}});
+          render();toast('تم الحفظ وتحديث الأرصدة.');break}
         case 'delitem':{
           const id=el.dataset.id,i=it(id);
-          const used=DB.moves.some(m=>m.itemId===id);
-          if(!confirm(used?`«${i.name}» له عمليات مسجّلة، وسيتم حذفها معه. متابعة؟`:`حذف الصنف «${i.name}»؟`))return;
-          DB.moves=DB.moves.filter(m=>m.itemId!==id);
+          if(!confirm(`أرشفة الصنف «${i.name}»؟ سجلاته وتقاريره تبقى محفوظة، وتقدر تسترجعه لاحقًا من "عرض الأصناف المؤرشفة".`))return;
+          i.archived=true;i.archivedAt=today();i.archivedBy=CUR_EMAIL||'';
+          saveItemFields(id,{archived:true,archivedAt:i.archivedAt,archivedBy:i.archivedBy});
+          render();toast('تم أرشفة الصنف.');break}
+        case 'restoreitem':{
+          const id=el.dataset.id,i=it(id);
+          if(i){delete i.archived;delete i.archivedAt;delete i.archivedBy;
+            saveItemFields(id,{archived:null,archivedAt:null,archivedBy:null});render();toast('تم استرجاع الصنف.');}
+          break}
+        case 'delitemhard':{
+          const id=el.dataset.id,i=it(id);
+          if(!confirm(`حذف «${i.name}» نهائيًا؟ هذا الإجراء لا يمكن التراجع عنه.`))return;
           DB.items=DB.items.filter(x=>x.id!==id);
-          save();render();toast('تم الحذف.');break}
+          deleteItemRemote(id);render();toast('تم الحذف نهائيًا.');break}
+        case 'togglearch':{F.showArch=!F.showArch;F.q='';F.qcat='';render();break}
         case 'pickitem':{
           const i=it(el.dataset.id);
           if(i){F.mid=i.id;F.mq=i.name;render();}
@@ -630,11 +681,12 @@ function bind(){
             const av=bal(iid);
             if(q>av)return toast(`المتاح من «${it(iid).name}» هو ${fmt(av)} فقط.`,'bad');
           }
-          DB.moves.push({id:uid(),type,date:F.mdate||today(),no:(F.mno||'').trim(),
-            party:(F.mparty||'').trim(),itemId:iid,qty:q,notes:(F.mnotes||'').trim(),by:CUR_EMAIL||''});
+          const newMove={id:uid(),type,date:F.mdate||today(),no:(F.mno||'').trim(),
+            party:(F.mparty||'').trim(),itemId:iid,qty:q,notes:(F.mnotes||'').trim(),by:CUR_EMAIL||''};
+          DB.moves.push(newMove);
           const i2=it(iid),b=bal(iid),s=st(b,i2.min);
           delete F.mq;delete F.mid;delete F.mdate;delete F.mno;delete F.mparty;delete F.mqty;delete F.mnotes;
-          save();render();
+          saveMove(newMove);render();
           const msg=type==='in'?`تمت الإضافة. رصيد ${i2.name} الآن ${fmt(b)} ${i2.unit}`
             :type==='out'?`تم الخصم. تبقّى ${fmt(b)} ${i2.unit} من ${i2.name}`
             :`تم تسجيل التالف. تبقّى ${fmt(b)} ${i2.unit} من ${i2.name}`;
@@ -642,9 +694,12 @@ function bind(){
           if(s.k!=='ok')setTimeout(()=>toast(`${i2.name}: ${s.t}`,'bad'),700);
           break}
         case 'delmove':{
+          const mid=el.dataset.id;
           if(!confirm('حذف هذه العملية؟ سيُعاد حساب الرصيد تلقائيًا.'))return;
-          DB.moves=DB.moves.filter(m=>m.id!==el.dataset.id);save();render();toast('تم الحذف وتحديث الرصيد.');break}
+          DB.moves=DB.moves.filter(m=>m.id!==mid);deleteMoveRemote(mid);render();toast('تم الحذف وتحديث الرصيد.');break}
         case 'toggle':{const k=+el.dataset.k;F.open=F.open===k?null:k;render();break}
+        case 'mprev':{F.mpage=Math.max(0,(F.mpage||0)-1);render();break}
+        case 'mnext':{F.mpage=(F.mpage||0)+1;render();break}
         case 'print':doPrint();break;
         case 'excel':doExcel();break;
         case 'printday':doPrintDay();break;
@@ -659,7 +714,7 @@ function bind(){
 function restore(f){
   if(!f)return;const r=new FileReader();
   r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.items)throw 0;
-    DB.items=d.items;DB.moves=d.moves||[];save();go('open');toast('تم استيراد النسخة.')}
+    DB.items=d.items;DB.moves=d.moves||[];fbReplaceAll();go('open');toast('تم استيراد النسخة.')}
     catch(e){toast('الملف غير صالح.','bad')}};
   r.readAsText(f);
 }
@@ -740,24 +795,42 @@ function buildBranchWidget(){
   }
   paintBranchWidget();
 }
-function startSync(){
+async function migrateLegacyIfNeeded(){
+  try{
+    const snap=await fbRef.once('value');
+    const val=snap.val();
+    if(val&&Array.isArray(val.items)){
+      const itemsKeyed={};(val.items||[]).forEach(i=>{if(i&&i.id)itemsKeyed[i.id]=i});
+      const movesKeyed={};(val.moves||[]).forEach(m=>{if(m&&m.id)movesKeyed[m.id]=m});
+      await fbRef.set({items:itemsKeyed,moves:movesKeyed});
+    }
+  }catch(e){/* لو فشل الترحيل، الاشتراك العادي بالأسفل يكمل عادي على البنية القديمة أو الجديدة أيًا كانت */}
+}
+let itemsFirst=true, movesFirst=true;
+async function startSync(){
   const s=$('#sync-status');
   if(fbRef){
     updateStatusText();
-    fbRef.on('value', snap=>{
-      const d=snap.exists()?snap.val():{items:[],moves:[]};
-      const raw=JSON.stringify(d);
-      if(raw!==lastSyncedRaw){
-        const first=lastSyncedRaw===null;
-        lastSyncedRaw=raw;
-        DB.items=d.items||[]; DB.moves=d.moves||[];
-        render();
-        if(!first)toast('تم تحديث البيانات — تعديل من مستخدم آخر');
-      }
+    await migrateLegacyIfNeeded();
+    fbRef.child('items').on('value', snap=>{
+      const arr=snap.val()?Object.values(snap.val()):[];
+      const changed=JSON.stringify(arr)!==JSON.stringify(DB.items);
+      DB.items=arr;
+      if(changed)render();
+      if(changed&&!itemsFirst)toast('تم تحديث الأصناف — تعديل من مستخدم آخر');
+      itemsFirst=false;
     }, ()=>{noStore=true; if(s)s.textContent='تعذّر الاتصال بقاعدة البيانات المشتركة'; toast('تعذّر الاتصال — تحقّق من الإنترنت.','bad')});
+    fbRef.child('moves').on('value', snap=>{
+      const arr=snap.val()?Object.values(snap.val()):[];
+      const changed=JSON.stringify(arr)!==JSON.stringify(DB.moves);
+      DB.moves=arr;
+      if(changed)render();
+      if(changed&&!movesFirst)toast('تم تحديث الحركات — تعديل من مستخدم آخر');
+      movesFirst=false;
+    }, ()=>{noStore=true});
   }else{
     try{const raw=localStorage.getItem(KEY);
-      if(raw){lastSyncedRaw=raw;const d=JSON.parse(raw);DB.items=d.items||[];DB.moves=d.moves||[];render()}}catch(e){}
+      if(raw){const d=JSON.parse(raw);DB.items=d.items||[];DB.moves=d.moves||[];render()}}catch(e){}
     noStore=true;
     if(s)s.textContent='تعذّر الاتصال بقاعدة البيانات المشتركة — يتم الحفظ على هذا الجهاز فقط';
     toast('تعذّر تحميل خدمة المزامنة — الحفظ محلي فقط على هذا الجهاز.','bad');
@@ -788,8 +861,8 @@ if(fbRef){
     }else{
       CUR_EMAIL=null;CUR_BRANCH=null;CUR_ALL=false;VIEW=null;
       $('#gate').style.display='';$('#app').style.display='none';
-      if(fbRef){try{fbRef.off()}catch(e){}}
-      dbHandleBound=false; DB={items:[],moves:[]};
+      if(fbRef){try{fbRef.child('items').off();fbRef.child('moves').off()}catch(e){}}
+      dbHandleBound=false; DB={items:[],moves:[]}; itemsFirst=true; movesFirst=true;
     }
   });
 }else{
