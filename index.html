@@ -109,7 +109,8 @@ select.badge-branch{border:none;appearance:none;-webkit-appearance:none;-moz-app
 
 <div class="app" id="app" style="display:none">
   <header class="topbar">
-    <h1>المخزون <span id="branch-widget" style="vertical-align:middle"></span></h1>
+    <h1>نظام المخزون <span id="branch-widget" style="vertical-align:middle"></span></h1>
+    <div style="font-size:11px;color:#7E9E9B;letter-spacing:.5px;margin-top:1px">Documentation Flowers</div>
     <small id="sync-status">كميات فقط — بدون أي أسعار أو حسابات مالية</small>
     <div class="topbtns">
       <button class="icobtn" id="btn-settings">⚙️ الإعدادات</button>
@@ -189,8 +190,9 @@ function bal(id,upto){
 const st=(b,min)=> n(b)<=0?{k:'zero',t:'نفد'} : (n(min)>0&&n(b)<=n(min)?{k:'low',t:'منخفض'}:{k:'ok',t:'متوفر'});
 
 /* تنبيهات واتساب للأصناف اللي وصلت للحد الأدنى */
-const WHATS_NUM='966533228036';
-const waLink=text=>`https://wa.me/${WHATS_NUM}?text=${encodeURIComponent(text)}`;
+const BRANCH_WHATS={'الفرع الرئيسي':'966533228036','فرع الرياض':'966501027553'};
+const WHATS_NUM='966533228036'; // احتياطي لو الفرع غير معروف
+const waLink=(text,branch)=>`https://wa.me/${BRANCH_WHATS[branch]||WHATS_NUM}?text=${encodeURIComponent(text)}`;
 const lowItems=()=>visItems().map(i=>({i,b:bal(i.id)})).filter(x=>st(x.b,x.i.min).k!=='ok');
 const lowMsg=(i,b)=>`⚠️ تنبيه مخزون\nالصنف: ${i.name}\nالمتبقي: ${fmt(b)} ${i.unit}\nالحد الأدنى: ${fmt(i.min)} ${i.unit}\nالحالة: ${st(b,i.min).t}`;
 const allLowMsg=list=>`⚠️ تنبيه مخزون — أصناف منخفضة (${list.length})\n\n`+list.map(x=>`• ${x.i.name}: متبقي ${fmt(x.b)} ${x.i.unit} (الحد الأدنى ${fmt(x.i.min)})`).join('\n');
@@ -217,6 +219,8 @@ function vOpen(){
   if(q)list=list.filter(i=>i.name.toLowerCase().includes(q.toLowerCase()));
   if(F.qcat)list=list.filter(i=>(i.category||'')===F.qcat);
   const low=lowItems();
+  const lowByBranch={};
+  low.forEach(x=>{const br=x.i.branch||DEFAULT_BRANCH;(lowByBranch[br]=lowByBranch[br]||[]).push(x)});
   return `
   <div class="pagehead"><h2>الرصيد الافتتاحي</h2>
     <p>أضف أصنافك والكميات الموجودة في المخزن عند البداية. الرصيد الحالي يُحسب تلقائيًا.</p></div>
@@ -224,15 +228,18 @@ function vOpen(){
   ${low.length?`<div class="card" style="border-color:#F0C89C">
     <div class="card-h"><h3 style="color:var(--amber)">⚠️ أصناف منخفضة أو نفدت</h3><span class="sub">${low.length} صنف</span></div>
     <div class="card-b">
-      <div class="btnrow" style="margin-bottom:${low.length>1?'10px':'0'}">
-        ${low.length>1?`<a class="btn primary sm" target="_blank" href="${waLink(allLowMsg(low))}">إرسال تنبيه بكل الأصناف عبر واتساب</a>`:''}
+      <div class="btnrow" style="margin-bottom:10px">
+        ${Object.entries(lowByBranch).filter(([,l])=>l.length>1).map(([br,l])=>
+          `<a class="btn primary sm" target="_blank" href="${waLink(allLowMsg(l),br)}">إرسال تنبيه ${VIEW==='all'?`(${esc(br)})`:''} عبر واتساب</a>`
+        ).join('')}
       </div>
-      <div class="tblwrap"><table><thead><tr><th>الصنف</th><th class="num">المتبقي</th><th>الحالة</th><th></th></tr></thead>
+      <div class="tblwrap"><table><thead><tr><th>الصنف</th>${VIEW==='all'?'<th>الفرع</th>':''}<th class="num">المتبقي</th><th>الحالة</th><th></th></tr></thead>
       <tbody>${low.map(x=>`<tr>
         <td class="wrap"><b>${esc(x.i.name)}</b></td>
+        ${VIEW==='all'?`<td><span class="badge-branch">${esc(x.i.branch||DEFAULT_BRANCH)}</span></td>`:''}
         <td class="num">${fmt(x.b)} ${esc(x.i.unit)}</td>
         <td><span class="tag ${st(x.b,x.i.min).k}">${st(x.b,x.i.min).t}</span></td>
-        <td><a class="btn ghost sm" target="_blank" href="${waLink(lowMsg(x.i,x.b))}">إرسال واتساب</a></td></tr>`).join('')}</tbody></table></div>
+        <td><a class="btn ghost sm" target="_blank" href="${waLink(lowMsg(x.i,x.b),x.i.branch||DEFAULT_BRANCH)}">إرسال واتساب</a></td></tr>`).join('')}</tbody></table></div>
     </div>
   </div>`:''}
 
@@ -717,7 +724,7 @@ function updateStatusText(){
 function paintBranchWidget(){
   const isAll=VIEW==='all';
   const el=$('#branch-select')||$('#branch-badge');
-  if(el){el.style.background=isAll?'#FBF0DC':'#E4F1EE';el.style.color=isAll?'#8A5A08':'#0A5B52';}
+  if(el){el.style.background=isAll?'#E3ECFB':'#E4F1EE';el.style.color=isAll?'#1B4F8C':'#0A5B52';}
 }
 function buildBranchWidget(){
   const bw=$('#branch-widget');
