@@ -161,9 +161,21 @@ const it=id=>DB.items.find(i=>i.id===id);
 const normName=s=>String(s||'').trim().replace(/\s+/g,' ').replace(/[إأآا]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').toLowerCase();
 const sameName=(a,b)=>normName(a)===normName(b);
 const matchName=(name,q)=>normName(name).includes(normName(q));
-const DEFAULT_CATS=['عطور','فازات','شوكلت','تغليف'];
+const DEFAULT_CATS=['عطور','فازات','شوكلت','تغليف','أخرى'];
 const allCats=()=>[...new Set([...DEFAULT_CATS,...DB.items.map(i=>i.category).filter(Boolean)])];
 const allUnits=()=>[...new Set([...UNITS,...DB.items.map(i=>i.unit).filter(Boolean)])];
+/* تصنيف تلقائي حسب بداية اسم الصنف — يُستخدم إذا ترك المستخدم خانة التصنيف فاضية */
+const CAT_RULES=[
+  {cat:'فازات', kws:['فازة','فازه']},
+  {cat:'عطور', kws:['عطر']},
+  {cat:'شوكلت', kws:['شوكلت','شوكولاته','شوكولاتة']},
+  {cat:'تغليف', kws:['تغليف','تغاليف']},
+];
+const autoCategory=name=>{
+  const nm=normName(name);
+  for(const r of CAT_RULES){if(r.kws.some(k=>nm.startsWith(normName(k))))return r.cat;}
+  return 'أخرى';
+};
 function toast(m,k){const t=document.createElement('div');t.className='toast '+(k||'');t.textContent=m;$('#toast').appendChild(t);setTimeout(()=>t.remove(),3000)}
 
 /* Firebase — قاعدة بيانات مشتركة بين كل من يفتح هذا الملف من أي متصفح */
@@ -226,13 +238,14 @@ function go(v){V=v;F={};render();scrollTo(0,0)}
 function render(){
   const a=document.activeElement;
   const keepId=(a&&a.id&&a.tagName==='INPUT')?a.id:null;
-  const sel=keepId?[a.selectionStart,a.selectionEnd]:null;
+  let sel=null;
+  if(keepId){try{sel=[a.selectionStart,a.selectionEnd]}catch(e){sel=null}}
   $('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${V===t.id?'on':''}" data-v="${t.id}">${t.t}</button>`).join('');
   $('#tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>go(b.dataset.v));
   $('#view').innerHTML={open:vOpen,in:vMove,out:vMove,damage:vMove,rep:vRep,repday:vRepDay}[V]();
   bind();
   if(keepId){const el=document.getElementById(keepId);
-    if(el){el.focus();try{el.setSelectionRange(sel[0],sel[1])}catch(e){}}}
+    if(el){el.focus();if(sel){try{el.setSelectionRange(sel[0],sel[1])}catch(e){}}}}
 }
 
 /* ---------- 1) الرصيد الافتتاحي (وهو أيضًا سجل الأصناف) ---------- */
@@ -271,7 +284,9 @@ function vOpen(){
     <div class="card-b">
       <div class="grid g2">
         <label class="f"><span>اسم الصنف *</span><input id="a-name" placeholder="مثال: ورد أحمر"></label>
-        <label class="f"><span>التصنيف</span><input id="a-cat" list="cat-list" placeholder="مثال: عطور"></label>
+        <label class="f"><span>التصنيف</span><input id="a-cat" list="cat-list" placeholder="مثال: عطور">
+          <small id="a-cat-hint" style="color:var(--txt2);font-size:11px">اتركه فاضي ليصنَّف تلقائيًا حسب اسم الصنف</small>
+        </label>
         <label class="f"><span>الوحدة</span><input id="a-unit" list="units-list" placeholder="مثال: حبة" value="حبة"></label>
         <label class="f"><span>الرصيد الافتتاحي</span><input id="a-open" type="number" step="any" min="0" value="0"></label>
         <label class="f"><span>الحد الأدنى للتنبيه</span><input id="a-min" type="number" step="any" min="0" value="0"></label>
@@ -376,7 +391,7 @@ function vMove(){
           <input id="mq" data-f="mq" data-live="1" autocomplete="off" value="${esc(F.mq||'')}" placeholder="اكتب جزءًا من اسم الصنف... مثال: فازه">
           ${picked?`<div style="font-size:11.5px;color:var(--txt2);margin-top:4px">✓ ${esc(picked.name)} — المتاح حاليًا ${fmt(bal(picked.id))} ${esc(picked.unit)}${VIEW==='all'?` <span class="badge-branch">${esc(picked.branch||DEFAULT_BRANCH)}</span>`:''}</div>`:''}
         </label>
-        <label class="f"><span>الكمية *</span><input id="m-qty" data-f="mqty" data-live="1" type="number" step="any" min="0" placeholder="0" value="${esc(F.mqty||'')}"></label>
+        <label class="f"><span>الكمية *</span><input id="m-qty" data-f="mqty" type="number" step="any" min="0" placeholder="0" value="${esc(F.mqty||'')}"></label>
         <label class="f"><span>ملاحظات</span><input id="m-notes" data-f="mnotes" data-live="1" placeholder="اختياري" value="${esc(F.mnotes||'')}"></label>
       </div>
       ${showList?`<div style="margin-top:10px">
@@ -626,6 +641,14 @@ function dl(blob,name){
 /* ---------- الأحداث ---------- */
 function bind(){
   const R=$('#view');
+  const anEl=$('#a-name'),acEl=$('#a-cat'),ahEl=$('#a-cat-hint');
+  if(anEl&&acEl&&ahEl){
+    anEl.addEventListener('input',()=>{
+      if(acEl.value.trim())return;
+      const nm=anEl.value.trim();
+      ahEl.textContent=nm?`سيُصنَّف تلقائيًا كـ: ${autoCategory(nm)}`:'اتركه فاضي ليصنَّف تلقائيًا حسب اسم الصنف';
+    });
+  }
   R.querySelectorAll('[data-f]').forEach(el=>{
     const evt=el.dataset.live?'input':'change';
     el.addEventListener(evt,()=>{F[el.dataset.f]=el.value;delete F.open;delete F.mpage;render()});
@@ -638,7 +661,7 @@ function bind(){
         case 'goopen':go('open');break;
         case 'additem':{
           const nm=$('#a-name').value.trim();
-          const cat=($('#a-cat').value||'').trim();
+          const cat=($('#a-cat').value||'').trim()||autoCategory(nm);
           const unit=($('#a-unit').value||'').trim()||'حبة';
           const br=CUR_ALL?($('#a-branch')?$('#a-branch').value:DEFAULT_BRANCH):CUR_BRANCH;
           if(!nm)return toast('اكتب اسم الصنف.','bad');
