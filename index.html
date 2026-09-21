@@ -319,7 +319,7 @@ function vOpen(){
       <th>الصنف</th><th>التصنيف</th>${VIEW==='all'?'<th>الفرع</th>':''}<th>الوحدة</th><th class="num" style="min-width:120px">الرصيد الافتتاحي</th>
       <th class="num" style="min-width:110px">الحد الأدنى</th><th class="num">الرصيد الحالي</th><th>الحالة</th><th></th></tr></thead>
       <tbody>${list.map(i=>{const b=bal(i.id),s=st(b,i.min),arch=!!i.archived,used=DB.moves.some(m=>m.itemId===i.id);return `<tr${arch?' style="opacity:.65"':''}>
-        <td class="wrap"><b>${esc(i.name)}</b>${arch?' <span class="tag zero">مؤرشف</span>':''}</td>
+        <td class="wrap"><input data-name="${i.id}" value="${esc(i.name)}" style="min-width:130px;font-weight:700" ${arch?'disabled':''}>${arch?' <span class="tag zero">مؤرشف</span>':''}</td>
         <td><input list="cat-list" data-cat="${i.id}" value="${esc(i.category||'')}" placeholder="—" style="min-width:100px" ${arch?'disabled':''}></td>
         ${VIEW==='all'?`<td><span class="badge-branch">${esc(i.branch||DEFAULT_BRANCH)}</span></td>`:''}
         <td><input list="units-list" data-unit="${i.id}" value="${esc(i.unit)}" style="min-width:80px" ${arch?'disabled':''}></td>
@@ -670,11 +670,23 @@ function bind(){
           DB.items.push(newItem);
           saveItem(newItem);render();toast('تمت إضافة الصنف.');break}
         case 'saveopen':{
+          let nameErr=false;
+          R.querySelectorAll('[data-name]').forEach(x=>{
+            const i=it(x.dataset.name);if(!i)return;
+            const v=x.value.trim();
+            if(!v){x.value=i.name;return}
+            if(sameName(v,i.name))return;
+            const br=i.branch||DEFAULT_BRANCH;
+            if(DB.items.some(o=>o.id!==i.id&&sameName(o.name,v)&&(o.branch||DEFAULT_BRANCH)===br&&!o.archived)){
+              toast(`الاسم «${v}» مستخدم بصنف آخر بنفس الفرع — تم تجاهل هذا التعديل.`,'bad');x.value=i.name;nameErr=true;return;
+            }
+            i.name=v;saveItemFields(i.id,{name:v});
+          });
           R.querySelectorAll('[data-op]').forEach(x=>{const i=it(x.dataset.op);if(i){const v=n(x.value);if(v!==i.opening){i.opening=v;saveItemFields(i.id,{opening:v})}}});
           R.querySelectorAll('[data-mn]').forEach(x=>{const i=it(x.dataset.mn);if(i){const v=n(x.value);if(v!==i.min){i.min=v;saveItemFields(i.id,{min:v})}}});
           R.querySelectorAll('[data-cat]').forEach(x=>{const i=it(x.dataset.cat);if(i){const v=x.value.trim();if(v!==(i.category||'')){i.category=v;saveItemFields(i.id,{category:v})}}});
           R.querySelectorAll('[data-unit]').forEach(x=>{const i=it(x.dataset.unit);if(i&&x.value.trim()){const v=x.value.trim();if(v!==i.unit){i.unit=v;saveItemFields(i.id,{unit:v})}}});
-          render();toast('تم الحفظ وتحديث الأرصدة.');break}
+          render();if(!nameErr)toast('تم الحفظ وتحديث الأرصدة.');break}
         case 'delitem':{
           const id=el.dataset.id,i=it(id);
           if(!confirm(`أرشفة الصنف «${i.name}»؟ سجلاته وتقاريره تبقى محفوظة، وتقدر تسترجعه لاحقًا من "عرض الأصناف المؤرشفة".`))return;
