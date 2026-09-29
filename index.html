@@ -78,6 +78,21 @@ tbody tr:hover{background:#FAFCFB}
 .who{font-size:12px;color:var(--txt2);background:var(--line2);padding:8px 10px;border-radius:8px;margin-bottom:12px}
 .badge-branch{display:inline-block;background:#E4F1EE;color:#0A5B52;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:700;margin-inline-start:6px}
 select.badge-branch{border:none;appearance:none;-webkit-appearance:none;-moz-appearance:none;cursor:pointer;padding-inline-end:20px;font-family:inherit}
+/* التوريدات الواردة */
+.rc{border-top:1px solid var(--line2);padding:12px 15px}
+.rc.on{background:#FBFCFB;box-shadow:inset 3px 0 0 var(--teal)}
+.rc-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.rc-name{font-weight:700;font-size:14.5px}
+.rc-qty{display:inline-block;background:#E4F1EE;color:#0A5B52;padding:1px 9px;border-radius:100px;font-size:12.5px;margin-inline-start:4px}
+.rc-meta{font-size:12px;color:var(--txt2);margin-top:2px}
+.rc-b{margin-top:12px}
+.rc-sec{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff}
+.rc-sec-h{font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.rc-sum{padding:1px 9px;border-radius:100px;font-size:11.5px}
+.rc-sum.ok{background:#E4F1EE;color:#0A5B52}.rc-sum.bad{background:#FBE7E5;color:var(--red)}
+.rc-part{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line2);flex-wrap:wrap}
+.rc-part-n{flex:1;min-width:160px;font-weight:600}
+.tab .cnt{display:inline-block;background:var(--amber);color:#fff;border-radius:100px;padding:0 7px;font-size:11px;margin-inline-start:5px}
 @media print{
   .app{display:none!important}#toast{display:none!important}
   body{background:#fff}
@@ -135,6 +150,9 @@ const ACCESS_MAP={
   'ahmeddmflowers@gmail.com':{branch:'فرع الرياض'}
 };
 const DEFAULT_BRANCH='الفرع الرئيسي'; // أي بريد غير مذكور أعلاه يُعتبر تلقائيًا موظف الفرع الرئيسي
+let RC=[], RMAP={};                   // التوريدات الواردة من المشتريات + ذاكرة ربط أصنافها
+/* حسابات المشتريات فقط — ما تدخل نظام المخزون (حسابها موجود بس عشان إرسال التوريدات) */
+const PURCHASE_ONLY=['ashrfmohamed787@gmail.com'];
 let DB={items:[],moves:[]};           // items: {..., branch}; moves: {id,type:'in'|'out'|'damage',date,no,party,itemId,qty,notes,by}
 let V='open', F={};
 let noStore=false;
@@ -233,16 +251,17 @@ const lowMsg=(i,b)=>`⚠️ تنبيه مخزون\nالصنف: ${i.name}\nالم
 const allLowMsg=list=>`⚠️ تنبيه مخزون — أصناف منخفضة (${list.length})\n\n`+list.map(x=>`• ${x.i.name}: متبقي ${fmt(x.b)} ${x.i.unit} (الحد الأدنى ${fmt(x.i.min)})`).join('\n');
 
 /* ---------- التنقل ---------- */
-const TABS=[{id:'open',t:'الرصيد الافتتاحي'},{id:'in',t:'الوارد'},{id:'out',t:'المنصرف'},{id:'damage',t:'التالف'},{id:'rep',t:'التقرير الشهري'},{id:'repday',t:'التقرير اليومي'}];
+const TABS=[{id:'open',t:'الرصيد الافتتاحي'},{id:'rcv',t:'توريدات واردة'},{id:'in',t:'الوارد'},{id:'out',t:'المنصرف'},{id:'damage',t:'التالف'},{id:'rep',t:'التقرير الشهري'},{id:'repday',t:'التقرير اليومي'}];
 function go(v){V=v;F={};render();scrollTo(0,0)}
 function render(){
   const a=document.activeElement;
   const keepId=(a&&a.id&&a.tagName==='INPUT')?a.id:null;
   let sel=null;
   if(keepId){try{sel=[a.selectionStart,a.selectionEnd]}catch(e){sel=null}}
-  $('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${V===t.id?'on':''}" data-v="${t.id}">${t.t}</button>`).join('');
+  const pc=pendingRc().length;
+  $('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${V===t.id?'on':''}" data-v="${t.id}">${t.t}${t.id==='rcv'&&pc?`<span class="cnt">${pc}</span>`:''}</button>`).join('');
   $('#tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>go(b.dataset.v));
-  $('#view').innerHTML={open:vOpen,in:vMove,out:vMove,damage:vMove,rep:vRep,repday:vRepDay}[V]();
+  $('#view').innerHTML={open:vOpen,rcv:vRcv,in:vMove,out:vMove,damage:vMove,rep:vRep,repday:vRepDay}[V]();
   bind();
   if(keepId){const el=document.getElementById(keepId);
     if(el){el.focus();if(sel){try{el.setSelectionRange(sel[0],sel[1])}catch(e){}}}}
@@ -638,6 +657,191 @@ function dl(blob,name){
   catch(e){toast('تعذّر التنزيل هنا، استخدم الطباعة.','bad')}
 }
 
+/* ---------- التوريدات الواردة من نظام المشتريات ---------- */
+/* كل صنف مخزني ينحفظ بفاتورة مشتريات يوصل هنا "بانتظار التأكيد".
+   المسؤول يعدّ البضاعة، يربطها بصنف (أو أكثر للألوان)، ويأكد — فتنضاف حركة وارد. */
+function hashStr(s){
+  let h1=0xdeadbeef,h2=0x41c6ce57;
+  for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+  h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return (h2>>>0).toString(36)+(h1>>>0).toString(36);
+}
+const R3=x=>Math.round(n(x)*1000)/1000;
+const rcById=id=>RC.find(r=>r.id===id);
+const visRc=()=>RC.filter(r=>r&&r.id&&(VIEW==='all'||r.branch===VIEW));
+const pendingRc=()=>visRc().filter(r=>r.status==='pending').sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+const rcMapKey=r=>'m'+hashStr(normName(r.name)+'|'+normName(r.unit)+'|'+(r.branch||''));
+const rcBranchItems=r=>DB.items.filter(i=>!i.archived&&(i.branch||DEFAULT_BRANCH)===(r.branch||DEFAULT_BRANCH));
+const fmtTime=t=>t?new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'}):'—';
+
+function rcOpen(r){
+  F.rid=r.id; F.rq=String(n(r.qty)); F.rnote=''; F.rsq='';
+  const m=RMAP[rcMapKey(r)];
+  const pool=rcBranchItems(r);
+  let ids=m&&Array.isArray(m.itemIds)?m.itemIds.filter(id=>pool.some(i=>i.id===id)):[];
+  if(!ids.length){const same=pool.find(i=>sameName(i.name,r.name));if(same)ids=[same.id];}
+  F.rf=String(m&&n(m.factor)>0?n(m.factor):1);
+  F.rparts=ids.map(id=>({itemId:id,qty:''}));
+}
+
+function vRcv(){
+  const pend=pendingRc();
+  const done=visRc().filter(r=>r.status!=='pending')
+    .sort((a,b)=>(b.confirmedAt||b.rejectedAt||b.cancelledAt||b.createdAt||0)-(a.confirmedAt||a.rejectedAt||a.cancelledAt||a.createdAt||0)).slice(0,40);
+  const stTag=r=>r.status==='confirmed'?'<span class="tag ok">مستلم</span>':r.status==='rejected'?'<span class="tag zero">مرفوض</span>':'<span class="tag" style="background:var(--line2);color:var(--txt2)">ملغى</span>';
+  const partsTxt=r=>Array.isArray(r.parts)&&r.parts.length?r.parts.map(p=>`${esc(p.name)}: ${fmt(p.qty)}`).join('، '):'—';
+  return `
+  <div class="pagehead"><h2>توريدات واردة</h2><p>أصناف من فواتير المشتريات بانتظار الاستلام. عدّ البضاعة، اختر صنف المخزون، وأكّد — الكمية تنضاف للرصيد مباشرة.</p></div>
+  <div class="card">
+    <div class="card-h"><h3>بانتظار التأكيد</h3><span class="sub">${pend.length} صنف</span></div>
+    ${pend.length?pend.map(rcRow).join(''):`<div class="empty"><strong>ما فيه توريدات معلّقة</strong>أي صنف مخزني ينحفظ بفاتورة مشتريات بيظهر هنا تلقائيًا.</div>`}
+  </div>
+  <div class="card">
+    <div class="card-h"><h3>آخر التوريدات</h3><span class="sub">آخر ${done.length}</span></div>
+    <div class="tblwrap">
+    ${done.length?`<table><thead><tr><th>الوقت</th><th>الفاتورة</th><th>المورد</th><th>الصنف</th><th class="num">المفوتر</th><th class="num">المستلم</th><th>الحالة</th><th>دخل المخزون كـ</th><th>بواسطة</th><th>ملاحظة</th></tr></thead><tbody>
+      ${done.map(r=>`<tr>
+        <td style="font-size:12px">${fmtTime(r.confirmedAt||r.rejectedAt||r.cancelledAt)}</td>
+        <td>${esc(r.invoiceNo)||'—'}</td><td class="wrap">${esc(r.supplier)||'—'}</td>
+        <td class="wrap"><b>${esc(r.name)}</b>${VIEW==='all'?` <span class="badge-branch">${esc(r.branch)}</span>`:''}</td>
+        <td class="num">${fmt(r.qty)} ${esc(r.unit)}</td>
+        <td class="num">${r.status==='confirmed'?`${fmt(r.receivedQty)} ${esc(r.unit)}`:'—'}</td>
+        <td>${stTag(r)}</td>
+        <td class="wrap" style="font-size:12.5px">${r.status==='confirmed'?partsTxt(r):'—'}</td>
+        <td style="font-size:11.5px;color:var(--txt2)">${esc(r.confirmedBy||r.rejectedBy||'')||'—'}</td>
+        <td class="wrap" style="font-size:12.5px;color:var(--txt2)">${esc(r.note||r.cancelReason||'')||'—'}${CUR_ALL&&r.invoiceChanged?`<div style="color:var(--red);font-weight:700;margin-top:3px">⚠ ${esc(r.invoiceChanged)}</div>`:''}</td>
+      </tr>`).join('')}</tbody></table>`
+    :`<div class="empty"><strong>لا يوجد سجل بعد</strong>التوريدات المؤكدة والمرفوضة تظهر هنا.</div>`}
+    </div>
+  </div>`;
+}
+
+function rcRow(r){
+  const open=F.rid===r.id;
+  return `<div class="rc${open?' on':''}">
+    <div class="rc-h">
+      <div>
+        <div class="rc-name">${esc(r.name)} <span class="rc-qty">${fmt(r.qty)} ${esc(r.unit)}</span>${VIEW==='all'?` <span class="badge-branch">${esc(r.branch)}</span>`:''}</div>
+        <div class="rc-meta">فاتورة ${esc(r.invoiceNo)||'—'} · ${esc(r.supplier)||'—'} · ${dH(r.invoiceDate)} · أدخلها ${esc(r.createdBy)||'—'}</div>
+      </div>
+      ${open?'':`<button class="btn primary sm" data-a="rcopen" data-id="${r.id}">استلام</button>`}
+    </div>
+    ${open?rcForm(r):''}
+  </div>`;
+}
+
+function rcForm(r){
+  const parts=F.rparts||[];
+  const many=parts.length>1;
+  const rq=n(F.rq), rf=n(F.rf)||0, tot=R3(rq*rf);
+  const sum=R3(parts.reduce((s,p)=>s+n(p.qty),0));
+  const chosen=new Set(parts.map(p=>p.itemId));
+  const q=(F.rsq||'').trim();
+  const pool=rcBranchItems(r).filter(i=>!chosen.has(i.id));
+  const matches=q?pool.filter(i=>matchName(i.name,q)).slice(0,10):[];
+  const exact=q&&rcBranchItems(r).some(i=>sameName(i.name,q));
+  const firstUnit=parts.length&&it(parts[0].itemId)?it(parts[0].itemId).unit:'';
+  const diffQty=Math.abs(rq-n(r.qty))>1e-9;
+  return `<div class="rc-b">
+    <div class="grid g2">
+      <label class="f"><span>الكمية المستلمة فعليًا (${esc(r.unit)})</span><input id="rc-q" data-rc="rq" type="number" step="any" min="0" value="${esc(F.rq)}"></label>
+      <label class="f"><span>كل 1 ${esc(r.unit)} = كم ${esc(firstUnit||'حبة')} بالمخزون؟</span><input id="rc-f" data-rc="rf" type="number" step="any" min="0" value="${esc(F.rf)}"></label>
+      <label class="f" style="grid-column:1/-1"><span>ملاحظة${diffQty?' <b style="color:var(--red)">(مطلوبة — المستلم يختلف عن الفاتورة)</b>':''}</span><input id="rc-n" data-rc="rnote" placeholder="مثال: وصل ناقص كرتون" value="${esc(F.rnote||'')}"></label>
+    </div>
+    <div class="rc-sec">
+      <div class="rc-sec-h">يدخل المخزون كـ ${many?`<span class="rc-sum ${Math.abs(sum-tot)<1e-6?'ok':'bad'}">موزّع ${fmt(sum)} من ${fmt(tot)}</span>`:''}</div>
+      ${parts.length?parts.map((p,k)=>{const i=it(p.itemId)||{name:'(صنف محذوف)',unit:''};return `<div class="rc-part">
+        <span class="rc-part-n">${esc(i.name)} <span style="color:var(--txt2);font-size:12px">— الرصيد ${fmt(bal(p.itemId))} ${esc(i.unit)}</span></span>
+        ${many?`<input id="rc-p-${k}" data-rp="${k}" type="number" step="any" min="0" placeholder="الكمية" value="${esc(p.qty)}" style="width:110px">`:`<b class="num">${fmt(tot)} ${esc(i.unit)}</b>`}
+        <button class="btn ghost sm" data-a="rcrm" data-k="${k}">إزالة</button>
+      </div>`}).join(''):`<div style="font-size:12.5px;color:var(--txt2);margin-bottom:6px">اختر صنف المخزون المقابل. لو الفاتورة تجمع ألوان، أضف كل لون كصنف ووزّع الكمية.</div>`}
+      <input id="rc-s" data-rc="rsq" autocomplete="off" placeholder="${parts.length?'أضف صنف ثاني (لون آخر مثلًا)…':'ابحث عن صنف المخزون…'}" value="${esc(F.rsq||'')}" style="margin-top:6px">
+      ${q?`<div class="btnrow" style="margin-top:8px">
+        ${matches.map(i=>`<button class="btn sm" data-a="rcadd" data-id="${i.id}">${esc(i.name)} <span style="color:var(--txt2)">(${fmt(bal(i.id))} ${esc(i.unit)})</span></button>`).join('')}
+        ${!exact?`<button class="btn sm" data-a="rcnew" style="border-style:dashed">+ إضافة «${esc(q)}» كصنف جديد</button>`:''}
+      </div>`:''}
+    </div>
+    <div class="btnrow" style="margin-top:14px">
+      <button class="btn primary" data-a="rcok">تأكيد الاستلام</button>
+      <button class="btn danger" data-a="rcno">رفض / ما وصل</button>
+      <button class="btn ghost" data-a="rcclose">إغلاق</button>
+    </div>
+  </div>`;
+}
+
+async function rcConfirm(){
+  const r=rcById(F.rid);
+  if(!r||r.status!=='pending')return toast('هذا التوريد ما عاد معلّق — يمكن أحد أكّده.','bad');
+  const rq=n(F.rq), rf=n(F.rf), parts=(F.rparts||[]).slice(), note=(F.rnote||'').trim();
+  if(rq<=0)return toast('الكمية المستلمة لازم أكبر من صفر — لو ما وصل شي استخدم «رفض».','bad');
+  if(rf<=0)return toast('أدخل معامل تحويل الوحدة (1 لو نفس الوحدة).','bad');
+  if(!parts.length)return toast('اختر صنف المخزون أولًا.','bad');
+  if(Math.abs(rq-n(r.qty))>1e-9&&!note)return toast('المستلم يختلف عن الفاتورة — اكتب ملاحظة بالسبب.','bad');
+  for(const p of parts){const i=it(p.itemId);if(!i||i.archived)return toast('فيه صنف محذوف أو مؤرشف بالقائمة — أزله.','bad');}
+  const tot=R3(rq*rf);
+  let qtys;
+  if(parts.length===1)qtys=[tot];
+  else{
+    qtys=parts.map(p=>R3(p.qty));
+    if(qtys.some(x=>x<=0))return toast('عبّي كمية كل صنف بالتوزيع (أكبر من صفر) أو أزله.','bad');
+    const sum=R3(qtys.reduce((s,x)=>s+x,0));
+    if(Math.abs(sum-tot)>1e-6)return toast(`مجموع التوزيع ${fmt(sum)} لازم يساوي ${fmt(tot)}.`,'bad');
+  }
+  const now=Date.now(), upd={};
+  const partsDoc=parts.map((p,k)=>({itemId:p.itemId,name:it(p.itemId).name,qty:qtys[k]}));
+  partsDoc.forEach((p,k)=>{
+    const mid=r.id+'_'+k;
+    upd[`moves/${mid}`]={id:mid,type:'in',date:today(),no:String(r.invoiceNo||''),party:String(r.supplier||''),itemId:p.itemId,qty:p.qty,
+      notes:'توريد من المشتريات'+(note?' — '+note:''),by:CUR_EMAIL||'',receiptId:r.id};
+  });
+  upd[`receipts/${r.id}/status`]='confirmed';
+  upd[`receipts/${r.id}/confirmedBy`]=CUR_EMAIL||'';
+  upd[`receipts/${r.id}/confirmedAt`]=now;
+  upd[`receipts/${r.id}/receivedQty`]=rq;
+  upd[`receipts/${r.id}/factor`]=rf;
+  upd[`receipts/${r.id}/parts`]=partsDoc;
+  upd[`receipts/${r.id}/note`]=note;
+  upd[`receiptMaps/${rcMapKey(r)}`]={itemIds:parts.map(p=>p.itemId),factor:rf,by:CUR_EMAIL||'',at:now};
+  try{
+    await fbRef.update(upd);   // كل شي بعملية وحدة: يا يدخل كله يا ما يدخل شي
+  }catch(e){
+    const denied=String(e&&e.code||e&&e.message||'').toLowerCase().includes('permission');
+    return toast(denied?'تعذّر التأكيد — غالبًا انأكد من شخص ثاني. حدّث الصفحة.':'تعذّر التأكيد — تحقّق من الإنترنت.','bad');
+  }
+  ['rid','rq','rf','rnote','rsq','rparts'].forEach(k=>delete F[k]);
+  render();
+  toast(`تم الاستلام: ${partsDoc.map(p=>`${p.name} +${fmt(p.qty)}`).join('، ')}`);
+}
+
+async function rcReject(){
+  const r=rcById(F.rid);
+  if(!r||r.status!=='pending')return toast('هذا التوريد ما عاد معلّق.','bad');
+  const note=(F.rnote||'').trim();
+  if(!note)return toast('اكتب سبب الرفض بخانة الملاحظة.','bad');
+  if(!confirm(`رفض توريد «${r.name}»؟ ما راح يدخل المخزون، ويظهر مرفوض عند المشتريات.`))return;
+  const upd={};
+  upd[`receipts/${r.id}/status`]='rejected';
+  upd[`receipts/${r.id}/rejectedBy`]=CUR_EMAIL||'';
+  upd[`receipts/${r.id}/rejectedAt`]=Date.now();
+  upd[`receipts/${r.id}/note`]=note;
+  try{await fbRef.update(upd)}catch(e){return toast('تعذّر الرفض — حدّث الصفحة وحاول مرة ثانية.','bad')}
+  ['rid','rq','rf','rnote','rsq','rparts'].forEach(k=>delete F[k]);
+  render();toast('تم رفض التوريد.');
+}
+
+function rcNewItem(){
+  const r=rcById(F.rid);if(!r)return;
+  const nm=(F.rsq||'').trim();if(!nm)return;
+  const br=r.branch||DEFAULT_BRANCH;
+  if(DB.items.some(i=>sameName(i.name,nm)&&(i.branch||DEFAULT_BRANCH)===br&&!i.archived))return toast('هذا الصنف موجود — اختره من النتائج.','bad');
+  const unit=n(F.rf)===1?(r.unit||'حبة'):'حبة';
+  const newItem={id:uid(),name:nm,category:autoCategory(nm),unit,opening:0,min:0,branch:br};
+  DB.items.push(newItem);saveItem(newItem);
+  F.rparts=(F.rparts||[]).concat([{itemId:newItem.id,qty:''}]);F.rsq='';
+  render();toast(`انضاف «${nm}» للمخزون (الوحدة: ${unit}) — عدّل التصنيف من الأصناف لو تبي.`);
+}
+
 /* ---------- الأحداث ---------- */
 function bind(){
   const R=$('#view');
@@ -653,12 +857,25 @@ function bind(){
     const evt=el.dataset.live?'input':'change';
     el.addEventListener(evt,()=>{F[el.dataset.f]=el.value;delete F.open;delete F.mpage;render()});
   });
+  R.querySelectorAll('[data-rc]').forEach(el=>{
+    el.addEventListener('input',()=>{F[el.dataset.rc]=el.value;render()});
+  });
+  R.querySelectorAll('[data-rp]').forEach(el=>{
+    el.addEventListener('input',()=>{const p=(F.rparts||[])[+el.dataset.rp];if(p){p.qty=el.value;render()}});
+  });
   R.querySelectorAll('[data-a]').forEach(el=>{
     const a=el.dataset.a;
     if(a==='restore'){el.onchange=e=>restore(e.target.files[0]);return}
     el.onclick=()=>{
       switch(a){
         case 'goopen':go('open');break;
+        case 'rcopen':{const r=rcById(el.dataset.id);if(r){rcOpen(r);render()}break}
+        case 'rcclose':{['rid','rq','rf','rnote','rsq','rparts'].forEach(k=>delete F[k]);render();break}
+        case 'rcadd':{F.rparts=(F.rparts||[]).concat([{itemId:el.dataset.id,qty:''}]);F.rsq='';render();break}
+        case 'rcrm':{F.rparts=(F.rparts||[]).filter((_,k)=>k!==+el.dataset.k);render();break}
+        case 'rcnew':rcNewItem();break;
+        case 'rcok':rcConfirm();break;
+        case 'rcno':rcReject();break;
         case 'additem':{
           const nm=$('#a-name').value.trim();
           const cat=($('#a-cat').value||'').trim()||autoCategory(nm);
@@ -730,7 +947,9 @@ function bind(){
           break}
         case 'delmove':{
           const mid=el.dataset.id;
-          if(!confirm('حذف هذه العملية؟ سيُعاد حساب الرصيد تلقائيًا.'))return;
+          const mvx=DB.moves.find(m=>m.id===mid);
+          if(mvx&&mvx.receiptId&&!CUR_ALL)return toast('هذي الحركة من توريد مشتريات — حذفها من صلاحية الإدارة.','bad');
+          if(!confirm(mvx&&mvx.receiptId?'هذي الحركة جاية من توريد مشتريات مؤكد. حذفها يخصم الكمية من الرصيد لكن التوريد يظل «مستلم» عند المشتريات. متابعة؟':'حذف هذه العملية؟ سيُعاد حساب الرصيد تلقائيًا.'))return;
           DB.moves=DB.moves.filter(m=>m.id!==mid);deleteMoveRemote(mid);render();toast('تم الحذف وتحديث الرصيد.');break}
         case 'toggle':{const k=+el.dataset.k;F.open=F.open===k?null:k;render();break}
         case 'mprev':{F.mpage=Math.max(0,(F.mpage||0)-1);render();break}
@@ -841,7 +1060,7 @@ async function migrateLegacyIfNeeded(){
     }
   }catch(e){/* لو فشل الترحيل، الاشتراك العادي بالأسفل يكمل عادي على البنية القديمة أو الجديدة أيًا كانت */}
 }
-let itemsFirst=true, movesFirst=true;
+let itemsFirst=true, movesFirst=true, rcFirst=true;
 async function startSync(){
   const s=$('#sync-status');
   if(fbRef){
@@ -863,6 +1082,18 @@ async function startSync(){
       if(changed&&!movesFirst)toast('تم تحديث الحركات — تعديل من مستخدم آخر');
       movesFirst=false;
     }, ()=>{noStore=true});
+    fbRef.child('receipts').on('value', snap=>{
+      const arr=snap.val()?Object.values(snap.val()):[];
+      const before=pendingRc().length;
+      const changed=JSON.stringify(arr)!==JSON.stringify(RC);
+      RC=arr;
+      if(F.rid){const r=rcById(F.rid);if(!r||r.status!=='pending'){['rid','rq','rf','rnote','rsq','rparts'].forEach(k=>delete F[k]);}}
+      if(changed)render();
+      const after=pendingRc().length;
+      if(!rcFirst&&after>before)toast(`وصل توريد جديد من المشتريات (${after} بانتظار التأكيد)`);
+      rcFirst=false;
+    }, ()=>{});
+    fbRef.child('receiptMaps').on('value', snap=>{RMAP=snap.val()||{}}, ()=>{});
   }else{
     try{const raw=localStorage.getItem(KEY);
       if(raw){const d=JSON.parse(raw);DB.items=d.items||[];DB.moves=d.moves||[];render()}}catch(e){}
@@ -886,6 +1117,11 @@ $('#btn-settings').onclick=openSettings;
 
 if(fbRef){
   firebase.auth().onAuthStateChanged(user=>{
+    if(user&&PURCHASE_ONLY.includes((user.email||'').toLowerCase())){
+      firebase.auth().signOut();
+      $('#lg-err').textContent='هذا الحساب مخصص لنظام المشتريات فقط.';
+      return;
+    }
     if(user){
       CUR_EMAIL=user.email; const a=access(CUR_EMAIL); CUR_ALL=a.branch==='all'; CUR_BRANCH=CUR_ALL?null:a.branch;
       VIEW=CUR_ALL?'all':CUR_BRANCH;
@@ -896,8 +1132,8 @@ if(fbRef){
     }else{
       CUR_EMAIL=null;CUR_BRANCH=null;CUR_ALL=false;VIEW=null;
       $('#gate').style.display='';$('#app').style.display='none';
-      if(fbRef){try{fbRef.child('items').off();fbRef.child('moves').off()}catch(e){}}
-      dbHandleBound=false; DB={items:[],moves:[]}; itemsFirst=true; movesFirst=true;
+      if(fbRef){try{fbRef.child('items').off();fbRef.child('moves').off();fbRef.child('receipts').off();fbRef.child('receiptMaps').off()}catch(e){}}
+      dbHandleBound=false; DB={items:[],moves:[]}; RC=[]; RMAP={}; F={}; itemsFirst=true; movesFirst=true; rcFirst=true;
     }
   });
 }else{
