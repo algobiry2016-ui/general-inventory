@@ -675,15 +675,18 @@ const rcMapKey=r=>'m'+hashStr(normName(r.name)+'|'+normName(r.unit)+'|'+(r.branc
 const rcBranchItems=r=>DB.items.filter(i=>!i.archived&&(i.branch||DEFAULT_BRANCH)===(r.branch||DEFAULT_BRANCH));
 const fmtTime=t=>t?new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{dateStyle:'short',timeStyle:'short'}):'—';
 
+/* القاعدة: الصنف يدخل المخزون بنفس اسمه بالمشتريات. الاستثناء الوحيد: التوزيع على ألوان/أقسام (صنفين أو أكثر) */
+const rcSameItem=r=>rcBranchItems(r).find(i=>sameName(i.name,r.name))||null;
 function rcOpen(r){
   F.rid=r.id; F.rq=String(n(r.qty)); F.rnote=''; F.rsq='';
   const m=RMAP[rcMapKey(r)];
   const pool=rcBranchItems(r);
-  let ids=m&&Array.isArray(m.itemIds)?m.itemIds.filter(id=>pool.some(i=>i.id===id)):[];
-  if(!ids.length){const same=pool.find(i=>sameName(i.name,r.name));if(same)ids=[same.id];}
+  const ids=m&&Array.isArray(m.itemIds)?m.itemIds.filter(id=>pool.some(i=>i.id===id)):[];
   F.rf=String(m&&n(m.factor)>0?n(m.factor):1);
-  F.rparts=ids.map(id=>({itemId:id,qty:''}));
+  if(m&&(m.mode==='split'||(!m.mode&&ids.length>1))&&ids.length>1){F.rmode='split';F.rparts=ids.map(id=>({itemId:id,qty:''}));}
+  else{F.rmode='same';F.rparts=[];}
 }
+const RC_KEYS=['rid','rq','rf','rnote','rsq','rparts','rmode'];
 
 function vRcv(){
   const pend=pendingRc();
@@ -741,7 +744,10 @@ function rcForm(r){
   const pool=rcBranchItems(r).filter(i=>!chosen.has(i.id));
   const matches=q?pool.filter(i=>matchName(i.name,q)).slice(0,10):[];
   const exact=q&&rcBranchItems(r).some(i=>sameName(i.name,q));
-  const firstUnit=parts.length&&it(parts[0].itemId)?it(parts[0].itemId).unit:'';
+  const split=F.rmode==='split';
+  const sameIt=rcSameItem(r);
+  const newUnit=n(F.rf)===1?(r.unit||'حبة'):'حبة';
+  const firstUnit=split?(parts.length&&it(parts[0].itemId)?it(parts[0].itemId).unit:''):(sameIt?sameIt.unit:newUnit);
   const diffQty=Math.abs(rq-n(r.qty))>1e-9;
   return `<div class="rc-b">
     <div class="grid g2">
@@ -749,19 +755,26 @@ function rcForm(r){
       <label class="f"><span>كل 1 ${esc(r.unit)} = كم ${esc(firstUnit||'حبة')} بالمخزون؟</span><input id="rc-f" data-rc="rf" type="number" step="any" min="0" value="${esc(F.rf)}"></label>
       <label class="f" style="grid-column:1/-1"><span>ملاحظة${diffQty?' <b style="color:var(--red)">(مطلوبة — المستلم يختلف عن الفاتورة)</b>':''}</span><input id="rc-n" data-rc="rnote" placeholder="مثال: وصل ناقص كرتون" value="${esc(F.rnote||'')}"></label>
     </div>
-    <div class="rc-sec">
-      <div class="rc-sec-h">يدخل المخزون كـ ${many?`<span class="rc-sum ${Math.abs(sum-tot)<1e-6?'ok':'bad'}">موزّع ${fmt(sum)} من ${fmt(tot)}</span>`:''}</div>
+    ${!split?`<div class="rc-sec">
+      <div class="rc-sec-h">يدخل المخزون باسم</div>
+      <div class="rc-part">
+        <span class="rc-part-n">${esc(r.name)} ${sameIt?`<span style="color:var(--txt2);font-size:12px">— الرصيد ${fmt(bal(sameIt.id))} ${esc(sameIt.unit)}</span>`:`<span class="tag low">صنف جديد — بينضاف للمخزون بالوحدة: ${esc(newUnit)}</span>`}</span>
+        <b class="num">+${fmt(tot)} ${esc(sameIt?sameIt.unit:newUnit)}</b>
+      </div>
+      <button class="btn sm" data-a="rcsplit" style="margin-top:8px">توزيع على ألوان / أقسام</button>
+    </div>`:`<div class="rc-sec">
+      <div class="rc-sec-h">توزيع على ألوان / أقسام <button class="btn ghost sm" data-a="rcsame">رجوع لنفس الصنف</button> ${many?`<span class="rc-sum ${Math.abs(sum-tot)<1e-6?'ok':'bad'}">موزّع ${fmt(sum)} من ${fmt(tot)}</span>`:''}</div>
       ${parts.length?parts.map((p,k)=>{const i=it(p.itemId)||{name:'(صنف محذوف)',unit:''};return `<div class="rc-part">
         <span class="rc-part-n">${esc(i.name)} <span style="color:var(--txt2);font-size:12px">— الرصيد ${fmt(bal(p.itemId))} ${esc(i.unit)}</span></span>
         ${many?`<input id="rc-p-${k}" data-rp="${k}" type="number" step="any" min="0" placeholder="الكمية" value="${esc(p.qty)}" style="width:110px">`:`<b class="num">${fmt(tot)} ${esc(i.unit)}</b>`}
         <button class="btn ghost sm" data-a="rcrm" data-k="${k}">إزالة</button>
-      </div>`}).join(''):`<div style="font-size:12.5px;color:var(--txt2);margin-bottom:6px">اختر صنف المخزون المقابل. لو الفاتورة تجمع ألوان، أضف كل لون كصنف ووزّع الكمية.</div>`}
-      <input id="rc-s" data-rc="rsq" autocomplete="off" placeholder="${parts.length?'أضف صنف ثاني (لون آخر مثلًا)…':'ابحث عن صنف المخزون…'}" value="${esc(F.rsq||'')}" style="margin-top:6px">
+      </div>`}).join(''):`<div style="font-size:12.5px;color:var(--txt2);margin-bottom:6px">أضف كل لون أو قسم كصنف (صنفين على الأقل)، ووزّع الكمية عليهم.</div>`}
+      <input id="rc-s" data-rc="rsq" autocomplete="off" placeholder="${parts.length?'أضف لون أو قسم ثاني…':'مثال: '+esc(r.name)+' أحمر'}" value="${esc(F.rsq||'')}" style="margin-top:6px">
       ${q?`<div class="btnrow" style="margin-top:8px">
         ${matches.map(i=>`<button class="btn sm" data-a="rcadd" data-id="${i.id}">${esc(i.name)} <span style="color:var(--txt2)">(${fmt(bal(i.id))} ${esc(i.unit)})</span></button>`).join('')}
         ${!exact?`<button class="btn sm" data-a="rcnew" style="border-style:dashed">+ إضافة «${esc(q)}» كصنف جديد</button>`:''}
       </div>`:''}
-    </div>
+    </div>`}
     <div class="btnrow" style="margin-top:14px">
       <button class="btn primary" data-a="rcok">تأكيد الاستلام</button>
       <button class="btn danger" data-a="rcno">رفض / ما وصل</button>
@@ -776,19 +789,29 @@ async function rcConfirm(){
   const rq=n(F.rq), rf=n(F.rf), parts=(F.rparts||[]).slice(), note=(F.rnote||'').trim();
   if(rq<=0)return toast('الكمية المستلمة لازم أكبر من صفر — لو ما وصل شي استخدم «رفض».','bad');
   if(rf<=0)return toast('أدخل معامل تحويل الوحدة (1 لو نفس الوحدة).','bad');
-  if(!parts.length)return toast('اختر صنف المخزون أولًا.','bad');
+  const split=F.rmode==='split';
+  if(split&&parts.length<2)return toast('التوزيع لازم يكون على صنفين أو أكثر — لو صنف واحد اضغط «رجوع لنفس الصنف».','bad');
   if(Math.abs(rq-n(r.qty))>1e-9&&!note)return toast('المستلم يختلف عن الفاتورة — اكتب ملاحظة بالسبب.','bad');
   for(const p of parts){const i=it(p.itemId);if(!i||i.archived)return toast('فيه صنف محذوف أو مؤرشف بالقائمة — أزله.','bad');}
   const tot=R3(rq*rf);
-  let qtys;
-  if(parts.length===1)qtys=[tot];
-  else{
+  const upd={};
+  let qtys, createdId=null;
+  if(!split){
+    let si=rcSameItem(r);
+    if(!si){  // الصنف مو موجود بالمخزون: ينضاف بنفس اسمه بالمشتريات (ضمن نفس عملية التأكيد)
+      si={id:uid(),name:String(r.name).trim(),category:autoCategory(r.name),unit:rf===1?(r.unit||'حبة'):'حبة',opening:0,min:0,branch:r.branch||DEFAULT_BRANCH};
+      upd[`items/${si.id}`]=si;
+      DB.items.push(si);createdId=si.id;
+    }
+    parts.length=0;parts.push({itemId:si.id});
+    qtys=[tot];
+  }else{
     qtys=parts.map(p=>R3(p.qty));
     if(qtys.some(x=>x<=0))return toast('عبّي كمية كل صنف بالتوزيع (أكبر من صفر) أو أزله.','bad');
     const sum=R3(qtys.reduce((s,x)=>s+x,0));
     if(Math.abs(sum-tot)>1e-6)return toast(`مجموع التوزيع ${fmt(sum)} لازم يساوي ${fmt(tot)}.`,'bad');
   }
-  const now=Date.now(), upd={};
+  const now=Date.now();
   const partsDoc=parts.map((p,k)=>({itemId:p.itemId,name:it(p.itemId).name,qty:qtys[k]}));
   partsDoc.forEach((p,k)=>{
     const mid=r.id+'_'+k;
@@ -802,14 +825,19 @@ async function rcConfirm(){
   upd[`receipts/${r.id}/factor`]=rf;
   upd[`receipts/${r.id}/parts`]=partsDoc;
   upd[`receipts/${r.id}/note`]=note;
-  upd[`receiptMaps/${rcMapKey(r)}`]={itemIds:parts.map(p=>p.itemId),factor:rf,by:CUR_EMAIL||'',at:now};
+  upd[`receiptMaps/${rcMapKey(r)}`]={mode:split?'split':'same',itemIds:parts.map(p=>p.itemId),factor:rf,by:CUR_EMAIL||'',at:now};
+  // نطبّقها محليًا أول عشان ما يطلع تنبيه "تعديل من مستخدم آخر" على عملية المستخدم نفسه
+  const localMoves=Object.keys(upd).filter(k=>k.startsWith('moves/')).map(k=>upd[k]);
+  DB.moves.push(...localMoves);
   try{
     await fbRef.update(upd);   // كل شي بعملية وحدة: يا يدخل كله يا ما يدخل شي
   }catch(e){
+    const ids=new Set(localMoves.map(m=>m.id));DB.moves=DB.moves.filter(m=>!ids.has(m.id));
+    if(createdId)DB.items=DB.items.filter(i=>i.id!==createdId);
     const denied=String(e&&e.code||e&&e.message||'').toLowerCase().includes('permission');
     return toast(denied?'تعذّر التأكيد — غالبًا انأكد من شخص ثاني. حدّث الصفحة.':'تعذّر التأكيد — تحقّق من الإنترنت.','bad');
   }
-  ['rid','rq','rf','rnote','rsq','rparts'].forEach(k=>delete F[k]);
+  RC_KEYS.forEach(k=>delete F[k]);
   render();
   toast(`تم الاستلام: ${partsDoc.map(p=>`${p.name} +${fmt(p.qty)}`).join('، ')}`);
 }
@@ -826,7 +854,7 @@ async function rcReject(){
   upd[`receipts/${r.id}/rejectedAt`]=Date.now();
   upd[`receipts/${r.id}/note`]=note;
   try{await fbRef.update(upd)}catch(e){return toast('تعذّر الرفض — حدّث الصفحة وحاول مرة ثانية.','bad')}
-  ['rid','rq','rf','rnote','rsq','rparts'].forEach(k=>delete F[k]);
+  RC_KEYS.forEach(k=>delete F[k]);
   render();toast('تم رفض التوريد.');
 }
 
@@ -870,7 +898,9 @@ function bind(){
       switch(a){
         case 'goopen':go('open');break;
         case 'rcopen':{const r=rcById(el.dataset.id);if(r){rcOpen(r);render()}break}
-        case 'rcclose':{['rid','rq','rf','rnote','rsq','rparts'].forEach(k=>delete F[k]);render();break}
+        case 'rcclose':{RC_KEYS.forEach(k=>delete F[k]);render();break}
+        case 'rcsplit':{F.rmode='split';F.rparts=[];F.rsq=(rcById(F.rid)||{}).name?rcById(F.rid).name+' ':'';render();const s=document.getElementById('rc-s');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length)}break}
+        case 'rcsame':{F.rmode='same';F.rparts=[];F.rsq='';render();break}
         case 'rcadd':{F.rparts=(F.rparts||[]).concat([{itemId:el.dataset.id,qty:''}]);F.rsq='';render();break}
         case 'rcrm':{F.rparts=(F.rparts||[]).filter((_,k)=>k!==+el.dataset.k);render();break}
         case 'rcnew':rcNewItem();break;
@@ -1087,7 +1117,7 @@ async function startSync(){
       const before=pendingRc().length;
       const changed=JSON.stringify(arr)!==JSON.stringify(RC);
       RC=arr;
-      if(F.rid){const r=rcById(F.rid);if(!r||r.status!=='pending'){['rid','rq','rf','rnote','rsq','rparts'].forEach(k=>delete F[k]);}}
+      if(F.rid){const r=rcById(F.rid);if(!r||r.status!=='pending'){RC_KEYS.forEach(k=>delete F[k]);}}
       if(changed)render();
       const after=pendingRc().length;
       if(!rcFirst&&after>before)toast(`وصل توريد جديد من المشتريات (${after} بانتظار التأكيد)`);
