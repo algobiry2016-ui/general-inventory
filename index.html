@@ -683,7 +683,7 @@ function rcOpen(r){
   const pool=rcBranchItems(r);
   const ids=m&&Array.isArray(m.itemIds)?m.itemIds.filter(id=>pool.some(i=>i.id===id)):[];
   F.rf=String(m&&n(m.factor)>0?n(m.factor):1);
-  if(m&&(m.mode==='split'||(!m.mode&&ids.length>1))&&ids.length>1){F.rmode='split';F.rparts=ids.map(id=>({itemId:id,qty:''}));}
+  if(m&&(m.mode==='split'||(!m.mode&&ids.length>1))&&ids.length>=1){F.rmode='split';F.rparts=ids.map(id=>({itemId:id,qty:''}));}
   else{F.rmode='same';F.rparts=[];}
 }
 const RC_KEYS=['rid','rq','rf','rnote','rsq','rparts','rmode'];
@@ -769,7 +769,7 @@ function rcForm(r){
         <span class="rc-part-n">${esc(i.name)} <span style="color:var(--txt2);font-size:12px">— الرصيد ${fmt(bal(p.itemId))} ${esc(i.unit)}</span></span>
         ${many?`<input id="rc-p-${k}" data-rp="${k}" type="number" step="any" min="0" placeholder="الكمية" value="${esc(p.qty)}" style="width:110px">`:`<b class="num">${fmt(tot)} ${esc(i.unit)}</b>`}
         <button class="btn ghost sm" data-a="rcrm" data-k="${k}">إزالة</button>
-      </div>`}).join(''):`<div style="font-size:12.5px;color:var(--txt2);margin-bottom:6px">أضف كل لون أو قسم كصنف (صنفين على الأقل)، ووزّع الكمية عليهم.</div>`}
+      </div>`}).join(''):`<div style="font-size:12.5px;color:var(--txt2);margin-bottom:6px">أضف اللون أو القسم (واحد أو أكثر)، ولو أكثر من واحد وزّع الكمية عليهم.</div>`}
       <input id="rc-s" data-rc="rsq" autocomplete="off" placeholder="${parts.length?'أضف لون أو قسم ثاني…':'مثال: '+esc(r.name)+' أحمر'}" value="${esc(F.rsq||'')}" style="margin-top:6px">
       ${q?`<div class="btnrow" style="margin-top:8px">
         ${matches.map(i=>`<button class="btn sm" data-a="rcadd" data-id="${i.id}">${esc(i.name)} <span style="color:var(--txt2)">(${fmt(bal(i.id))} ${esc(i.unit)})</span></button>`).join('')}
@@ -791,7 +791,7 @@ async function rcConfirm(){
   if(rq<=0)return toast('الكمية المستلمة لازم أكبر من صفر — لو ما وصل شي استخدم «رفض».','bad');
   if(rf<=0)return toast('أدخل معامل تحويل الوحدة (1 لو نفس الوحدة).','bad');
   const split=F.rmode==='split';
-  if(split&&parts.length<2)return toast('التوزيع لازم يكون على صنفين أو أكثر — لو صنف واحد اضغط «رجوع لنفس الصنف».','bad');
+  if(split&&!parts.length)return toast('أضف صنف واحد على الأقل (مثلًا اللون).','bad');
   if(Math.abs(rq-n(r.qty))>1e-9&&!note)return toast('المستلم يختلف عن الفاتورة — اكتب ملاحظة بالسبب.','bad');
   for(const p of parts){const i=it(p.itemId);if(!i||i.archived)return toast('فيه صنف محذوف أو مؤرشف بالقائمة — أزله.','bad');}
   const tot=R3(rq*rf);
@@ -807,10 +807,10 @@ async function rcConfirm(){
     parts.length=0;parts.push({itemId:si.id});
     qtys=[tot];
   }else{
-    qtys=parts.map(p=>R3(p.qty));
+    if(parts.length===1){qtys=[tot];}else{qtys=parts.map(p=>R3(p.qty));
     if(qtys.some(x=>x<=0))return toast('عبّي كمية كل صنف بالتوزيع (أكبر من صفر) أو أزله.','bad');
     const sum=R3(qtys.reduce((s,x)=>s+x,0));
-    if(Math.abs(sum-tot)>1e-6)return toast(`مجموع التوزيع ${fmt(sum)} لازم يساوي ${fmt(tot)}.`,'bad');
+    if(Math.abs(sum-tot)>1e-6)return toast(`مجموع التوزيع ${fmt(sum)} لازم يساوي ${fmt(tot)}.`,'bad');}
   }
   const now=Date.now();
   const partsDoc=parts.map((p,k)=>({itemId:p.itemId,name:it(p.itemId).name,qty:qtys[k]}));
