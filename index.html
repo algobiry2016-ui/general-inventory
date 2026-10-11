@@ -93,13 +93,55 @@ select.badge-branch{border:none;appearance:none;-webkit-appearance:none;-moz-app
 .rc-part{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line2);flex-wrap:wrap}
 .rc-part-n{flex:1;min-width:160px;font-weight:600}
 .tab .cnt{display:inline-block;background:var(--amber);color:#fff;border-radius:100px;padding:0 7px;font-size:11px;margin-inline-start:5px}
+/* التقارير */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff;margin-bottom:12px;max-width:100%}
+.seg button{border:0;background:transparent;padding:8px 16px;cursor:pointer;font-weight:700;font-size:13px;color:var(--txt2)}
+.seg button+button{border-inline-start:1px solid var(--line)}
+.seg button.on{background:var(--ink);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:14px 0}
+.kpi{background:#fff;border:1px solid var(--line);border-top:3px solid #9DB0AE;border-radius:10px;padding:10px 13px}
+.kpi span{display:block;font-size:11.5px;color:var(--txt2);font-weight:700}
+.kpi b{display:block;font-size:22px;font-variant-numeric:tabular-nums;line-height:1.35}
+.kpi small{font-size:11px;color:var(--txt2)}
+.kpi.k-in{border-top-color:var(--teal)}.kpi.k-out{border-top-color:#1F5FA8}.kpi.k-dmg{border-top-color:var(--red)}.kpi.k-warn{border-top-color:var(--amber)}
+.t-in{background:#E4F1EE;color:#0A5B52}.t-out{background:#E3ECFB;color:#1B4F8C}.t-dmg{background:#FBE7E5;color:var(--red)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:14px;margin-top:14px}
+.two .card+.card{margin-top:0}
+.two+.card{margin-top:14px}
+.note{font-size:11.5px;color:var(--txt2)}
+.bar{height:6px;background:var(--line2);border-radius:4px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:#1F5FA8;border-radius:4px}
+/* ورقة الطباعة */
+#print-zone .pr{color:#111;font-size:10px;line-height:1.5}
+#print-zone .pr-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #0D2026;padding-bottom:7px;margin-bottom:7px}
+#print-zone .pr-brand{font-size:17px;font-weight:800;color:#0D2026}
+#print-zone .pr-sys{font-size:10px;color:#5C7076}
+#print-zone .pr-title{text-align:left}
+#print-zone .pr-title h1{font-size:16px;margin:0;color:#0E6E63}
+#print-zone .pr-title div{font-size:11.5px;font-weight:700}
+#print-zone .pr-meta{display:flex;flex-wrap:wrap;gap:4px 18px;background:#F4F6F5;border:1px solid #DCE4E3;border-radius:6px;padding:6px 10px;margin-bottom:8px}
+#print-zone .pr-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:6px}
+#print-zone .pr-kpis div{border:1px solid #DCE4E3;border-top:3px solid #0E6E63;border-radius:6px;padding:5px 8px}
+#print-zone .pr-kpis span{display:block;font-size:9px;color:#5C7076;font-weight:700}
+#print-zone .pr-kpis b{display:block;font-size:15px}
+#print-zone .pr-kpis small{font-size:8.5px;color:#5C7076}
+#print-zone h3{font-size:12px;margin:12px 0 5px;color:#0D2026;border-inline-start:4px solid #0E6E63;padding-inline-start:7px}
+#print-zone table{width:100%;border-collapse:collapse;font-size:9.5px;page-break-inside:auto}
+#print-zone tr{page-break-inside:avoid}
+#print-zone th{background:#0D2026;color:#fff;font-weight:700;padding:4px 5px;border:1px solid #0D2026;text-align:right}
+#print-zone td{border:1px solid #C9D3D1;padding:3px 5px;text-align:right;white-space:normal}
+#print-zone tbody tr:nth-child(even) td{background:#F7FAF9}
+#print-zone td.num{text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+#print-zone tfoot td{background:#E4F1EE;font-weight:800;border-top:2px solid #0D2026}
+#print-zone .c-red{color:#A8291F;font-weight:700}#print-zone .c-amb{color:#8A5A08;font-weight:700}
+#print-zone .c-grn{color:#0A5B52;font-weight:700}#print-zone .c-blu{color:#1B4F8C;font-weight:700}
+#print-zone .pr-sign{display:flex;justify-content:space-between;gap:30px;margin-top:22px;page-break-inside:avoid;font-size:10.5px;line-height:2.2}
+#print-zone .pr-foot{margin-top:10px;border-top:1px solid #DCE4E3;padding-top:4px;font-size:8.5px;color:#5C7076;text-align:center}
 @media print{
-  .app{display:none!important}#toast{display:none!important}
+  .app,#toast,#settings-modal{display:none!important}
   body{background:#fff}
-  #print-zone{display:block!important}
-  #print-zone table{width:100%;font-size:11px;border-collapse:collapse}
-  #print-zone th,#print-zone td{border:1px solid #bbb;padding:5px;text-align:right}
-  @page{size:A4;margin:12mm}
+  #print-zone{display:block!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4 landscape;margin:9mm}
 }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -251,7 +293,7 @@ const lowMsg=(i,b)=>`⚠️ تنبيه مخزون\nالصنف: ${i.name}\nالم
 const allLowMsg=list=>`⚠️ تنبيه مخزون — أصناف منخفضة (${list.length})\n\n`+list.map(x=>`• ${x.i.name}: متبقي ${fmt(x.b)} ${x.i.unit} (الحد الأدنى ${fmt(x.i.min)})`).join('\n');
 
 /* ---------- التنقل ---------- */
-const TABS=[{id:'open',t:'الرصيد الافتتاحي'},{id:'rcv',t:'توريدات واردة'},{id:'in',t:'الوارد'},{id:'out',t:'المنصرف'},{id:'damage',t:'التالف'},{id:'rep',t:'التقرير الشهري'},{id:'repday',t:'التقرير اليومي'}];
+const TABS=[{id:'open',t:'الرصيد الافتتاحي'},{id:'rcv',t:'توريدات واردة'},{id:'in',t:'الوارد'},{id:'out',t:'المنصرف'},{id:'damage',t:'التالف'},{id:'rep',t:'التقارير'}];
 function go(v){V=v;F={};render();scrollTo(0,0)}
 function render(){
   const a=document.activeElement;
@@ -261,7 +303,7 @@ function render(){
   const pc=pendingRc().length;
   $('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${V===t.id?'on':''}" data-v="${t.id}">${t.t}${t.id==='rcv'&&pc?`<span class="cnt">${pc}</span>`:''}</button>`).join('');
   $('#tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>go(b.dataset.v));
-  $('#view').innerHTML={open:vOpen,rcv:vRcv,in:vMove,out:vMove,damage:vMove,rep:vRep,repday:vRepDay}[V]();
+  $('#view').innerHTML={open:vOpen,rcv:vRcv,in:vMove,out:vMove,damage:vMove,rep:vRep}[V]();
   bind();
   if(keepId){const el=document.getElementById(keepId);
     if(el){el.focus();if(sel){try{el.setSelectionRange(sel[0],sel[1])}catch(e){}}}}
@@ -455,202 +497,253 @@ function vMove(){
   </div>`;
 }
 
-/* ---------- 5) التقرير الشهري ---------- */
-function vRep(){
-  const months=Array.from(new Set(visMoves().map(m=>ym(m.date)))).filter(Boolean).sort().reverse();
-  if(!months.length)months.push(ym(today()));
-  const cur=F.ym||months[0];
-  const type=F.type||'out';
-  const prev=cur+'-00';
+/* ---------- 5) التقارير (يومي / شهري / فترة محددة) ---------- */
+/* مصدر واحد للبيانات (repCompute) يغذي الشاشة والطباعة والإكسل، عشان الأرقام تطلع نفسها في الثلاثة */
+const TYPE_T={in:'الوارد',out:'المنصرف',damage:'التالف'};
+const TYPE_C={in:'t-in',out:'t-out',damage:'t-dmg'};
+const PTYPES=[['all','كل الحركات'],['out','المنصرف'],['in','الوارد'],['damage','التالف']];
+const MV_LIMIT=150;
+/* حساب اليوم السابق بالـ UTC — الحساب بالتوقيت المحلي كان يرجّع يومين ورا في السعودية */
+const dayBefore=d=>{const dt=new Date(d+'T00:00:00Z');dt.setUTCDate(dt.getUTCDate()-1);return dt.toISOString().slice(0,10)};
+const monthEnd=v=>{const[y,m]=v.split('-').map(Number);return new Date(Date.UTC(y,m,0)).toISOString().slice(0,10)};
+const branchOf=i=>(i&&i.branch)||DEFAULT_BRANCH;
+const byName=s=>(s||'').split('@')[0]||'—';
 
-  const rows=visItems().filter(i=>!F.rcat||(i.category||'')===F.rcat).map(i=>{
-    const mv=DB.moves.filter(m=>m.itemId===i.id&&ym(m.date)===cur);
-    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
-    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
-    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
-    const cnt=mv.filter(m=>m.type===type).length;
-    const open=bal(i.id,prev);
-    return {i,inQ,outQ,dmQ,cnt,open,close:open+inQ-outQ-dmQ,det:mv.filter(m=>m.type===type).sort((a,b)=>a.date.localeCompare(b.date))};
-  }).filter(r=>({in:r.inQ,out:r.outQ,damage:r.dmQ}[type])>0)
-    .sort((a,b)=>({in:b.inQ-a.inQ,out:b.outQ-a.outQ,damage:b.dmQ-a.dmQ})[type]);
-
-  const tot=rows.reduce((a,r)=>a+({in:r.inQ,out:r.outQ,damage:r.dmQ}[type]),0);
-  const totC=rows.reduce((a,r)=>a+r.cnt,0);
-  const partyLabel=type==='in'?'المورد':(type==='out'?'العميل / الجهة':'سبب التلف');
-  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
-  const em=t=>t===type?' style="font-size:15px;font-weight:800"':'';
-
-  return `
-  <div class="pagehead"><h2>التقرير الشهري</h2><p>اختر الشهر لعرض كل صنف تحرّك خلاله وتفاصيل عملياته.</p></div>
-
-  <div class="card"><div class="card-b"><div class="grid g2">
-    <label class="f"><span>الشهر</span><select data-f="ym">${months.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${mName(m)}</option>`).join('')}</select></label>
-    <label class="f"><span>نوع الحركة</span><select data-f="type">
-      <option value="out" ${type==='out'?'selected':''}>المنصرف</option>
-      <option value="in" ${type==='in'?'selected':''}>الوارد</option>
-      <option value="damage" ${type==='damage'?'selected':''}>التالف</option></select></label>
-    <label class="f"><span>التصنيف</span><select data-f="rcat"><option value="">كل التصنيفات</option>
-      ${allCats().map(c=>`<option value="${esc(c)}" ${F.rcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
-  </div>
-  <div class="btnrow" style="margin-top:12px">
-    <button class="btn" data-a="print">طباعة / PDF</button>
-    <button class="btn" data-a="excel">تصدير Excel</button>
-  </div></div></div>
-
-  <div class="card">
-    <div class="card-h"><h3>${typeTitle} — ${mName(cur)}</h3>
-      <span class="sub">${rows.length} صنف · إجمالي الكمية ${fmt(tot)}</span></div>
-    <div class="tblwrap">
-    ${rows.length?`<table><thead><tr>
-      <th>اسم الصنف</th><th>التصنيف</th><th>الوحدة</th><th class="num">رصيد أول الشهر</th><th class="num">الوارد</th>
-      <th class="num">المنصرف</th><th class="num">التالف</th><th class="num">عدد المرات</th><th class="num">رصيد آخر الشهر</th><th></th></tr></thead>
-      <tbody>${rows.map((r,k)=>`
-        <tr><td class="wrap"><b>${esc(r.i.name)}</b></td><td style="color:var(--txt2)">${esc(r.i.category)||'—'}</td><td>${esc(r.i.unit)}</td>
-          <td class="num">${fmt(r.open)}</td><td class="num"${em('in')}>${fmt(r.inQ)}</td>
-          <td class="num"${em('out')}>${fmt(r.outQ)}</td><td class="num"${em('damage')}>${fmt(r.dmQ)}</td>
-          <td class="num">${fmt(r.cnt)}</td><td class="num">${fmt(r.close)}</td>
-          <td><button class="btn ghost sm" data-a="toggle" data-k="${k}">${F.open===k?'إخفاء':'التفاصيل'}</button></td></tr>
-        ${F.open===k?`<tr class="detail"><td colspan="10">
-          <table style="margin:0"><thead><tr><th>التاريخ</th><th>رقم العملية</th><th>${partyLabel}</th><th class="num">الكمية</th><th>ملاحظات</th></tr></thead>
-          <tbody>${r.det.map(m=>`<tr><td>${dH(m.date)}</td><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
-            <td class="num">${fmt(m.qty)}</td><td class="wrap">${esc(m.notes)||'—'}</td></tr>`).join('')}</tbody></table>
-        </td></tr>`:''}`).join('')}</tbody>
-      <tfoot><tr><td colspan="4">الإجمالي</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.inQ,0))}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.outQ,0))}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.dmQ,0))}</td>
-        <td class="num">${fmt(totC)}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.close,0))}</td><td></td></tr></tfoot></table>`
-    :`<div class="empty"><strong>لا توجد حركة في ${mName(cur)}</strong>اختر شهرًا آخر أو سجّل عملية جديدة.</div>`}
-    </div>
-  </div>`;
+function repPeriod(){
+  const mode=F.pmode||'month';
+  if(mode==='day'){const d=F.day||today();return {mode,from:d,to:d,label:`يوم ${dH(d)}`}}
+  if(mode==='range'){
+    let from=F.pfrom||ym(today())+'-01', to=F.pto||today();
+    if(from>to)[from,to]=[to,from];
+    return {mode,from,to,label:`الفترة من ${dH(from)} إلى ${dH(to)}`};
+  }
+  const cur=F.ym||ym(today());
+  return {mode:'month',ym:cur,from:cur+'-01',to:monthEnd(cur),label:`شهر ${mName(cur)}`};
 }
 
-/* ---------- 6) التقرير اليومي ---------- */
-const dayBefore=d=>{const dt=new Date(d+'T00:00:00');dt.setDate(dt.getDate()-1);return dt.toISOString().slice(0,10)};
-function vRepDay(){
-  const days=Array.from(new Set(visMoves().map(m=>m.date))).filter(Boolean).sort().reverse();
-  if(!days.length)days.push(today());
-  const cur=F.day||days[0];
-  const type=F.dtype||'out';
+function repCompute(){
+  const P=repPeriod(), type=F.ptype||'all', cat=F.rcat||'', q=(F.rq||'').trim();
+  const items=visItems().filter(i=>(!cat||(i.category||'')===cat)&&(!q||matchName(i.name,q)));
+  const ids=new Set(items.map(i=>i.id)), byItem={};
+  DB.moves.forEach(m=>{if(ids.has(m.itemId)&&m.date>=P.from&&m.date<=P.to)(byItem[m.itemId]=byItem[m.itemId]||[]).push(m)});
+  const sum=(mv,t)=>mv.reduce((a,m)=>a+(m.type===t?n(m.qty):0),0);
+  const cnt=(mv,t)=>mv.filter(m=>m.type===t).length;
+  const prev=dayBefore(P.from);
+  let rows=items.map(i=>{
+    const mv=(byItem[i.id]||[]).sort((a,b)=>a.date.localeCompare(b.date));
+    const inQ=sum(mv,'in'),outQ=sum(mv,'out'),dmQ=sum(mv,'damage');
+    const open=bal(i.id,prev), close=open+inQ-outQ-dmQ;
+    const det=type==='all'?mv:mv.filter(m=>m.type===type);
+    return {i,mv,det,inQ,outQ,dmQ,open,close,cnt:det.length,s:st(close,i.min)};
+  }).filter(r=>r.det.length||(F.ridle&&!r.i.archived));
+  const key=r=>type==='all'?r.inQ+r.outQ+r.dmQ:{in:r.inQ,out:r.outQ,damage:r.dmQ}[type];
+  rows.sort((a,b)=>key(b)-key(a)||a.i.name.localeCompare(b.i.name,'ar'));
 
-  const rows=visItems().filter(i=>!F.rdcat||(i.category||'')===F.rdcat).map(i=>{
-    const mv=DB.moves.filter(m=>m.itemId===i.id&&m.date===cur);
-    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
-    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
-    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
-    const cnt=mv.filter(m=>m.type===type).length;
-    const open=bal(i.id,dayBefore(cur));
-    return {i,inQ,outQ,dmQ,cnt,open,close:open+inQ-outQ-dmQ,det:mv.filter(m=>m.type===type)};
-  }).filter(r=>({in:r.inQ,out:r.outQ,damage:r.dmQ}[type])>0)
-    .sort((a,b)=>({in:b.inQ-a.inQ,out:b.outQ-a.outQ,damage:b.dmQ-a.dmQ})[type]);
+  const moves=rows.flatMap(r=>r.det).sort((a,b)=>a.date.localeCompare(b.date));
+  const add=f=>rows.reduce((a,r)=>a+f(r),0);
+  const tot={open:add(r=>r.open),inQ:add(r=>r.inQ),outQ:add(r=>r.outQ),dmQ:add(r=>r.dmQ),close:add(r=>r.close),
+    inN:add(r=>cnt(r.mv,'in')),outN:add(r=>cnt(r.mv,'out')),dmN:add(r=>cnt(r.mv,'damage')),cnt:moves.length,
+    moved:rows.filter(r=>r.det.length).length,warn:rows.filter(r=>!r.i.archived&&r.s.k!=='ok').length};
 
-  const tot=rows.reduce((a,r)=>a+({in:r.inQ,out:r.outQ,damage:r.dmQ}[type]),0);
-  const totC=rows.reduce((a,r)=>a+r.cnt,0);
-  const partyLabel=type==='in'?'المورد':(type==='out'?'العميل / الجهة':'سبب التلف');
-  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
-  const em=t=>t===type?' style="font-size:15px;font-weight:800"':'';
+  const cats={};
+  rows.forEach(r=>{const c=r.i.category||'بدون تصنيف';
+    const x=cats[c]=cats[c]||{cat:c,items:0,inQ:0,outQ:0,dmQ:0,cnt:0};
+    x.items++;x.inQ+=r.inQ;x.outQ+=r.outQ;x.dmQ+=r.dmQ;x.cnt+=r.cnt});
+  const catRows=Object.values(cats).sort((a,b)=>b.outQ-a.outQ||a.cat.localeCompare(b.cat,'ar'));
+  const top=rows.filter(r=>r.outQ>0).sort((a,b)=>b.outQ-a.outQ).slice(0,5);
+
+  return {P,type,cat,q,rows,moves,catRows,top,tot,
+    typeLabel:PTYPES.find(x=>x[0]===type)[1],branchLabel:VIEW==='all'?'كل الفروع':VIEW};
+}
+
+/* جداول الطباعة والإكسل — الأرقام تبقى أرقام (عشان الإكسل يقدر يجمعها) والنصوص نصوص */
+function repSheets(R){
+  const all=VIEW==='all',{rows,moves,catRows,tot}=R;
+  return [
+    {title:'أولاً: ملخص الأصناف',
+     head:['م','الصنف','التصنيف',...(all?['الفرع']:[]),'الوحدة','رصيد أول المدة','الوارد','المنصرف','التالف','رصيد آخر المدة','الحد الأدنى','الحالة','عدد العمليات'],
+     body:rows.map((r,k)=>[k+1,r.i.name,r.i.category||'—',...(all?[branchOf(r.i)]:[]),r.i.unit,r.open,r.inQ,r.outQ,r.dmQ,r.close,n(r.i.min),r.i.archived?'مؤرشف':r.s.t,r.cnt]),
+     foot:['الإجمالي','','',...(all?['']:[]),'',tot.open,tot.inQ,tot.outQ,tot.dmQ,tot.close,'','',tot.cnt]},
+    {title:'ثانيًا: ملخص حسب التصنيف',
+     head:['التصنيف','عدد الأصناف','الوارد','المنصرف','التالف','عدد العمليات'],
+     body:catRows.map(c=>[c.cat,c.items,c.inQ,c.outQ,c.dmQ,c.cnt]),
+     foot:['الإجمالي',rows.length,tot.inQ,tot.outQ,tot.dmQ,tot.cnt]},
+    {title:'ثالثًا: سجل العمليات التفصيلي',
+     head:['م','التاريخ','النوع','رقم العملية','الجهة / السبب','الصنف',...(all?['الفرع']:[]),'الكمية','الوحدة','ملاحظات','أضافها','المصدر'],
+     body:moves.map((m,k)=>{const i=it(m.itemId)||{};return [k+1,dH(m.date),TYPE_T[m.type]||m.type,m.no||'—',m.party||'—',i.name||'—',...(all?[branchOf(i)]:[]),n(m.qty),i.unit||'',m.notes||'—',byName(m.by),m.receiptId?'توريد مشتريات':'يدوي']}),
+     foot:null}
+  ];
+}
+
+function vRep(){
+  const R=repCompute(),{P,type,rows,moves,catRows,top,tot}=R;
+  const all=VIEW==='all', cols=all?13:12;
+  const months=[...new Set([ym(today()),...visMoves().map(m=>ym(m.date))])].filter(Boolean).sort().reverse();
+  const z=v=>n(v)?fmt(v):'<span style="color:#B5C2C0">0</span>';
+  const em=t=>t===type?' style="font-weight:800;background:#F3F8F7"':'';
+  const mvShown=F.mvall?moves:moves.slice(0,MV_LIMIT);
+  const maxTop=top.length?top[0].outQ:1;
+  const typeTag=t=>`<span class="tag ${TYPE_C[t]||''}">${TYPE_T[t]||esc(t)}</span>`;
 
   return `
-  <div class="pagehead"><h2>التقرير اليومي</h2><p>اختر يومًا لعرض كل صنف تحرّك خلاله وتفاصيل عملياته.</p></div>
+  <div class="pagehead"><h2>التقارير</h2><p>تقرير شامل لحركة المخزون: الأرصدة، الوارد والمنصرف والتالف، وتفاصيل كل عملية.</p></div>
 
-  <div class="card"><div class="card-b"><div class="grid g2">
-    <label class="f"><span>اليوم</span><input type="date" data-f="day" value="${esc(cur)}"></label>
-    <label class="f"><span>نوع الحركة</span><select data-f="dtype">
-      <option value="out" ${type==='out'?'selected':''}>المنصرف</option>
-      <option value="in" ${type==='in'?'selected':''}>الوارد</option>
-      <option value="damage" ${type==='damage'?'selected':''}>التالف</option></select></label>
-    <label class="f"><span>التصنيف</span><select data-f="rdcat"><option value="">كل التصنيفات</option>
-      ${allCats().map(c=>`<option value="${esc(c)}" ${F.rdcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+  <div class="card"><div class="card-b">
+    <div class="seg">${[['day','يومي'],['month','شهري'],['range','فترة محددة']].map(([k,t])=>`<button class="${P.mode===k?'on':''}" data-a="pmode" data-v="${k}">${t}</button>`).join('')}</div>
+    <div class="grid g2">
+      ${P.mode==='day'?`<label class="f"><span>اليوم</span><input type="date" data-f="day" value="${esc(P.from)}"></label>`
+      :P.mode==='range'?`<label class="f"><span>من تاريخ</span><input type="date" data-f="pfrom" value="${esc(P.from)}"></label>
+        <label class="f"><span>إلى تاريخ</span><input type="date" data-f="pto" value="${esc(P.to)}"></label>`
+      :`<label class="f"><span>الشهر</span><select data-f="ym">${months.map(m=>`<option value="${m}" ${m===P.ym?'selected':''}>${mName(m)}</option>`).join('')}</select></label>`}
+      <label class="f"><span>نوع الحركة</span><select data-f="ptype">${PTYPES.map(([k,t])=>`<option value="${k}" ${type===k?'selected':''}>${t}</option>`).join('')}</select></label>
+      <label class="f"><span>التصنيف</span><select data-f="rcat"><option value="">كل التصنيفات</option>
+        ${allCats().map(c=>`<option value="${esc(c)}" ${F.rcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+      <label class="f"><span>بحث عن صنف</span><input id="rep-q" data-f="rq" data-live="1" autocomplete="off" value="${esc(F.rq||'')}" placeholder="اكتب جزءًا من الاسم..."></label>
+    </div>
+    <div class="btnrow" style="margin-top:12px;align-items:center">
+      <button class="btn primary" data-a="repprint">طباعة / PDF</button>
+      <button class="btn" data-a="repexcel">تصدير Excel</button>
+      <button class="btn ghost sm" data-a="ridle">${F.ridle?'إخفاء الأصناف بدون حركة':'إظهار كل الأصناف (حتى بدون حركة)'}</button>
+    </div>
+  </div></div>
+
+  <div class="kpis">
+    <div class="kpi k-in"><span>إجمالي الوارد</span><b>${fmt(tot.inQ)}</b><small>${tot.inN} عملية</small></div>
+    <div class="kpi k-out"><span>إجمالي المنصرف</span><b>${fmt(tot.outQ)}</b><small>${tot.outN} عملية</small></div>
+    <div class="kpi k-dmg"><span>إجمالي التالف</span><b>${fmt(tot.dmQ)}</b><small>${tot.dmN} عملية</small></div>
+    <div class="kpi"><span>العمليات المعروضة</span><b>${tot.cnt}</b><small>${esc(R.typeLabel)}</small></div>
+    <div class="kpi"><span>أصناف تحرّكت</span><b>${tot.moved}</b><small>من ${rows.length} صنف في التقرير</small></div>
+    <div class="kpi k-warn"><span>تحتاج متابعة</span><b>${tot.warn}</b><small>منخفض أو نفد آخر المدة</small></div>
   </div>
-  <div class="btnrow" style="margin-top:12px">
-    <button class="btn" data-a="printday">طباعة / PDF</button>
-    <button class="btn" data-a="excelday">تصدير Excel</button>
-  </div></div></div>
+  <p class="note" style="margin:-4px 0 14px">${esc(P.label)} · ${esc(R.branchLabel)} · الإجماليات تجمع الكميات بوحداتها المختلفة، والأدق المقارنة على مستوى الصنف.</p>
 
   <div class="card">
-    <div class="card-h"><h3>${typeTitle} — ${dH(cur)}</h3>
-      <span class="sub">${rows.length} صنف · إجمالي الكمية ${fmt(tot)}</span></div>
+    <div class="card-h"><h3>ملخص الأصناف</h3><span class="sub">${rows.length} صنف · ${esc(P.label)}</span></div>
     <div class="tblwrap">
     ${rows.length?`<table><thead><tr>
-      <th>اسم الصنف</th><th>التصنيف</th><th>الوحدة</th><th class="num">رصيد أول اليوم</th><th class="num">الوارد</th>
-      <th class="num">المنصرف</th><th class="num">التالف</th><th class="num">عدد المرات</th><th class="num">رصيد آخر اليوم</th><th></th></tr></thead>
+      <th>م</th><th>الصنف</th><th>التصنيف</th>${all?'<th>الفرع</th>':''}<th>الوحدة</th>
+      <th class="num">رصيد أول المدة</th><th class="num">الوارد</th><th class="num">المنصرف</th><th class="num">التالف</th>
+      <th class="num">رصيد آخر المدة</th><th>الحالة</th><th class="num">العمليات</th><th></th></tr></thead>
       <tbody>${rows.map((r,k)=>`
-        <tr><td class="wrap"><b>${esc(r.i.name)}</b></td><td style="color:var(--txt2)">${esc(r.i.category)||'—'}</td><td>${esc(r.i.unit)}</td>
-          <td class="num">${fmt(r.open)}</td><td class="num"${em('in')}>${fmt(r.inQ)}</td>
-          <td class="num"${em('out')}>${fmt(r.outQ)}</td><td class="num"${em('damage')}>${fmt(r.dmQ)}</td>
-          <td class="num">${fmt(r.cnt)}</td><td class="num">${fmt(r.close)}</td>
-          <td><button class="btn ghost sm" data-a="toggle" data-k="${k}">${F.open===k?'إخفاء':'التفاصيل'}</button></td></tr>
-        ${F.open===k?`<tr class="detail"><td colspan="10">
-          <table style="margin:0"><thead><tr><th>رقم العملية</th><th>${partyLabel}</th><th class="num">الكمية</th><th>ملاحظات</th></tr></thead>
-          <tbody>${r.det.map(m=>`<tr><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
-            <td class="num">${fmt(m.qty)}</td><td class="wrap">${esc(m.notes)||'—'}</td></tr>`).join('')}</tbody></table>
+        <tr><td style="color:var(--txt2)">${k+1}</td>
+          <td class="wrap"><b>${esc(r.i.name)}</b></td><td style="color:var(--txt2)">${esc(r.i.category)||'—'}</td>
+          ${all?`<td><span class="badge-branch" style="margin:0">${esc(branchOf(r.i))}</span></td>`:''}
+          <td>${esc(r.i.unit)}</td>
+          <td class="num">${fmt(r.open)}</td><td class="num"${em('in')}>${z(r.inQ)}</td>
+          <td class="num"${em('out')}>${z(r.outQ)}</td><td class="num"${em('damage')}>${z(r.dmQ)}</td>
+          <td class="num" style="font-size:14.5px">${fmt(r.close)}</td>
+          <td>${r.i.archived?'<span class="tag zero">مؤرشف</span>':`<span class="tag ${r.s.k}">${r.s.t}</span>`}</td>
+          <td class="num">${r.cnt}</td>
+          <td>${r.det.length?`<button class="btn ghost sm" data-a="toggle" data-k="${k}">${F.open===k?'إخفاء':'التفاصيل'}</button>`:''}</td></tr>
+        ${F.open===k?`<tr class="detail"><td colspan="${cols}">
+          <table style="margin:0"><thead><tr><th>التاريخ</th><th>النوع</th><th>رقم العملية</th><th>الجهة / السبب</th><th class="num">الكمية</th><th>ملاحظات</th><th>أضافها</th></tr></thead>
+          <tbody>${r.det.map(m=>`<tr><td>${dH(m.date)}</td><td>${typeTag(m.type)}</td><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
+            <td class="num">${fmt(m.qty)}</td><td class="wrap">${esc(m.notes)||'—'}</td><td>${esc(byName(m.by))}</td></tr>`).join('')}</tbody></table>
         </td></tr>`:''}`).join('')}</tbody>
-      <tfoot><tr><td colspan="4">الإجمالي</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.inQ,0))}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.outQ,0))}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.dmQ,0))}</td>
-        <td class="num">${fmt(totC)}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.close,0))}</td><td></td></tr></tfoot></table>`
-    :`<div class="empty"><strong>لا توجد حركة في ${dH(cur)}</strong>اختر يومًا آخر أو سجّل عملية جديدة.</div>`}
+      <tfoot><tr><td colspan="${all?5:4}">الإجمالي</td>
+        <td class="num">${fmt(tot.open)}</td><td class="num">${fmt(tot.inQ)}</td><td class="num">${fmt(tot.outQ)}</td>
+        <td class="num">${fmt(tot.dmQ)}</td><td class="num">${fmt(tot.close)}</td><td></td><td class="num">${tot.cnt}</td><td></td></tr></tfoot></table>`
+    :`<div class="empty"><strong>لا توجد حركة في ${esc(P.label)}</strong>غيّر الفترة أو الفلاتر، أو اضغط «إظهار كل الأصناف» لعرض الأرصدة.</div>`}
     </div>
-  </div>`;
+  </div>
+
+  ${rows.length?`<div class="two">
+    <div class="card">
+      <div class="card-h"><h3>حسب التصنيف</h3><span class="sub">${catRows.length} تصنيف</span></div>
+      <div class="tblwrap"><table><thead><tr><th>التصنيف</th><th class="num">الأصناف</th><th class="num">الوارد</th><th class="num">المنصرف</th><th class="num">التالف</th><th class="num">العمليات</th></tr></thead>
+        <tbody>${catRows.map(c=>`<tr><td><b>${esc(c.cat)}</b></td><td class="num">${c.items}</td><td class="num">${z(c.inQ)}</td><td class="num">${z(c.outQ)}</td><td class="num">${z(c.dmQ)}</td><td class="num">${c.cnt}</td></tr>`).join('')}</tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>الأكثر صرفًا</h3><span class="sub">أعلى ${top.length||0} أصناف</span></div>
+      <div class="card-b">${top.length?top.map((r,k)=>`<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;gap:8px;font-size:13px"><span><b>${k+1}.</b> ${esc(r.i.name)}</span><span class="num" style="font-weight:700">${fmt(r.outQ)} ${esc(r.i.unit)}</span></div>
+        <div class="bar"><i style="width:${Math.max(3,Math.round(r.outQ/maxTop*100))}%"></i></div></div>`).join('')
+        :'<div class="note">لا يوجد منصرف في هذه الفترة.</div>'}</div>
+    </div>
+  </div>`:''}
+
+  ${moves.length?`<div class="card">
+    <div class="card-h"><h3>سجل العمليات التفصيلي</h3><span class="sub">${moves.length} عملية · ${esc(R.typeLabel)}</span></div>
+    <div class="tblwrap"><table><thead><tr><th>م</th><th>التاريخ</th><th>النوع</th><th>رقم العملية</th><th>الجهة / السبب</th><th>الصنف</th>${all?'<th>الفرع</th>':''}
+      <th class="num">الكمية</th><th>الوحدة</th><th>ملاحظات</th><th>أضافها</th></tr></thead>
+      <tbody>${mvShown.map((m,k)=>{const i=it(m.itemId)||{};return `<tr>
+        <td style="color:var(--txt2)">${k+1}</td><td>${dH(m.date)}</td><td>${typeTag(m.type)}</td>
+        <td>${esc(m.no)||'—'}${m.receiptId?' <span class="tag ok" style="font-size:10.5px">مشتريات</span>':''}</td>
+        <td class="wrap">${esc(m.party)||'—'}</td><td class="wrap"><b>${esc(i.name)}</b></td>
+        ${all?`<td><span class="badge-branch" style="margin:0">${esc(branchOf(i))}</span></td>`:''}
+        <td class="num">${fmt(m.qty)}</td><td>${esc(i.unit)}</td>
+        <td class="wrap" style="color:var(--txt2)">${esc(m.notes)||'—'}</td><td style="font-size:11.5px;color:var(--txt2)">${esc(byName(m.by))}</td></tr>`}).join('')}</tbody></table></div>
+    ${moves.length>MV_LIMIT?`<div class="card-b" style="border-top:1px solid var(--line2)">
+      <button class="btn sm" data-a="mvall">${F.mvall?'عرض أول '+MV_LIMIT+' فقط':'عرض كل العمليات ('+moves.length+')'}</button>
+      <span class="note" style="margin-inline-start:8px">الطباعة والإكسل يشملون كل العمليات دائمًا.</span></div>`:''}
+  </div>`:''}`;
 }
 
 /* ---------- الطباعة والتصدير ---------- */
-function repData(){
-  const months=Array.from(new Set(visMoves().map(m=>ym(m.date)))).sort().reverse();
-  const cur=F.ym||months[0]||ym(today()); const type=F.type||'out';
-  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
-  const head=['اسم الصنف','التصنيف','الوحدة','رصيد أول الشهر','الوارد','المنصرف','التالف','عدد المرات','رصيد آخر الشهر'];
-  const body=[];
-  visItems().filter(i=>!F.rcat||(i.category||'')===F.rcat).forEach(i=>{
-    const mv=DB.moves.filter(m=>m.itemId===i.id&&ym(m.date)===cur);
-    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
-    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
-    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
-    if(!({in:inQ,out:outQ,damage:dmQ}[type]))return;
-    const open=bal(i.id,cur+'-00');
-    body.push([i.name,i.category||'—',i.unit,fmt(open),fmt(inQ),fmt(outQ),fmt(dmQ),fmt(mv.filter(m=>m.type===type).length),fmt(open+inQ-outQ-dmQ)]);
-  });
-  return {title:`تقرير ${typeTitle} — ${mName(cur)}`,head,body};
-}
-function repDataDay(){
-  const days=Array.from(new Set(visMoves().map(m=>m.date))).sort().reverse();
-  const cur=F.day||days[0]||today(); const type=F.dtype||'out';
-  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
-  const head=['اسم الصنف','التصنيف','الوحدة','رصيد أول اليوم','الوارد','المنصرف','التالف','عدد المرات','رصيد آخر اليوم'];
-  const body=[];
-  visItems().filter(i=>!F.rdcat||(i.category||'')===F.rdcat).forEach(i=>{
-    const mv=DB.moves.filter(m=>m.itemId===i.id&&m.date===cur);
-    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
-    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
-    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
-    if(!({in:inQ,out:outQ,damage:dmQ}[type]))return;
-    const open=bal(i.id,dayBefore(cur));
-    body.push([i.name,i.category||'—',i.unit,fmt(open),fmt(inQ),fmt(outQ),fmt(dmQ),fmt(mv.filter(m=>m.type===type).length),fmt(open+inQ-outQ-dmQ)]);
-  });
-  return {title:`تقرير ${typeTitle} — ${dH(cur)}`,head,body};
-}
-function printRep(r){
-  $('#print-zone').innerHTML=`<h2 style="margin:0 0 4px">${esc(r.title)}</h2>
-    <div style="font-size:11px;color:#555;border-bottom:1px solid #999;padding-bottom:6px;margin-bottom:10px">نظام المخزون — كميات فقط · تاريخ الطباعة ${dH(today())}</div>
-    ${r.body.length?`<table><thead><tr>${r.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-    <tbody>${r.body.map(x=>`<tr>${x.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`:'<p>لا توجد بيانات.</p>'}`;
+const CELL_C={'نفد':'c-red','منخفض':'c-amb','مؤرشف':'c-red','التالف':'c-red','الوارد':'c-grn','المنصرف':'c-blu'};
+function repPrint(){
+  const R=repCompute(),{P,tot}=R;
+  if(!R.rows.length)return toast('لا توجد بيانات للطباعة في هذه الفترة.','bad');
+  const cell=c=>typeof c==='number'?`<td class="num">${fmt(c)}</td>`:`<td${CELL_C[c]?` class="${CELL_C[c]}"`:''}>${esc(c)}</td>`;
+  const tbl=s=>!s.body.length?'':`<h3>${s.title}</h3><table><thead><tr>${s.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${s.body.map(r=>`<tr>${r.map(cell).join('')}</tr>`).join('')}</tbody>
+    ${s.foot?`<tfoot><tr>${s.foot.map(cell).join('')}</tr></tfoot>`:''}</table>`;
+  $('#print-zone').innerHTML=`<div class="pr">
+    <div class="pr-head">
+      <div><div class="pr-brand">دوكمنتيشن فلاورز</div><div class="pr-sys">نظام المخزون العام · كميات فقط</div></div>
+      <div class="pr-title"><h1>تقرير حركة المخزون</h1><div>${esc(P.label)}</div></div>
+    </div>
+    <div class="pr-meta">
+      <span>الفرع: <b>${esc(R.branchLabel)}</b></span><span>نوع الحركة: <b>${esc(R.typeLabel)}</b></span>
+      <span>التصنيف: <b>${esc(R.cat||'كل التصنيفات')}</b></span>${R.q?`<span>بحث: <b>${esc(R.q)}</b></span>`:''}
+      <span>تاريخ الطباعة: <b>${esc(fmtTime(Date.now()))}</b></span><span>بواسطة: <b>${esc(byName(CUR_EMAIL))}</b></span>
+    </div>
+    <div class="pr-kpis">
+      <div><span>الوارد</span><b>${fmt(tot.inQ)}</b><small>${tot.inN} عملية</small></div>
+      <div><span>المنصرف</span><b>${fmt(tot.outQ)}</b><small>${tot.outN} عملية</small></div>
+      <div><span>التالف</span><b>${fmt(tot.dmQ)}</b><small>${tot.dmN} عملية</small></div>
+      <div><span>رصيد أول المدة</span><b>${fmt(tot.open)}</b></div>
+      <div><span>رصيد آخر المدة</span><b>${fmt(tot.close)}</b></div>
+      <div><span>أصناف تحرّكت</span><b>${tot.moved}</b><small>تحتاج متابعة: ${tot.warn}</small></div>
+    </div>
+    ${repSheets(R).map(tbl).join('')}
+    <div class="pr-sign">
+      <div>أمين المخزن<br>الاسم: ............................ التوقيع: ....................</div>
+      <div>اعتماد الإدارة<br>الاسم: ............................ التوقيع: ....................</div>
+    </div>
+    <div class="pr-foot">تقرير آلي من نظام المخزون — دوكمنتيشن فلاورز · الإجماليات تجمع الكميات بوحداتها المختلفة</div>
+  </div>`;
   setTimeout(()=>print(),60);
 }
-function excelRep(r){
-  if(!r.body.length)return toast('لا توجد بيانات للتصدير.','bad');
-  const html=`<html dir="rtl"><head><meta charset="utf-8"></head><body><table border="1">
-    <tr><th colspan="${r.head.length}">${esc(r.title)}</th></tr>
-    <tr>${r.head.map(h=>`<th>${h}</th>`).join('')}</tr>
-    ${r.body.map(x=>`<tr>${x.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
-  dl(new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'}),r.title+'.xls');
+function repExcel(){
+  const R=repCompute(),{P,tot}=R;
+  if(!R.rows.length)return toast('لا توجد بيانات للتصدير.','bad');
+  const sheets=repSheets(R), W=sheets[0].head.length;
+  const B='border:.5pt solid #9AA9A7;';
+  const cell=(c,s='')=>typeof c==='number'?`<td style="${B}${s}text-align:center">${c}</td>`:`<td style="${B}${s}">${esc(c)}</td>`;
+  const row=(cells,s)=>`<tr>${cells.map(c=>cell(c,s)).join('')}</tr>`;
+  const full=(t,s)=>`<tr><td colspan="${W}" style="${s}">${t}</td></tr>`;
+  const HEAD='background:#0D2026;color:#FFFFFF;font-weight:bold;text-align:center;';
+  const html=`<html dir="rtl" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+  <head><meta charset="utf-8">${'<'+'!--'}[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>تقرير المخزون</x:Name>
+  <x:WorksheetOptions><x:DisplayRightToLeft/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--${'>'}</head>
+  <body dir="rtl"><table style="font-family:Tahoma,Arial;font-size:11pt;direction:rtl">
+    ${full('دوكمنتيشن فلاورز — تقرير حركة المخزون','font-size:16pt;font-weight:bold;color:#0D2026')}
+    ${full(esc(P.label),'font-size:12pt;font-weight:bold;color:#0E6E63')}
+    ${full(`الفرع: ${esc(R.branchLabel)} · نوع الحركة: ${esc(R.typeLabel)} · التصنيف: ${esc(R.cat||'كل التصنيفات')}${R.q?` · بحث: ${esc(R.q)}`:''}`,'color:#5C7076')}
+    ${full(`تاريخ التصدير: ${esc(fmtTime(Date.now()))} · بواسطة: ${esc(byName(CUR_EMAIL))}`,'color:#5C7076')}
+    <tr></tr>
+    ${row(['إجمالي الوارد','إجمالي المنصرف','إجمالي التالف','رصيد أول المدة','رصيد آخر المدة','عدد العمليات','أصناف تحرّكت','تحتاج متابعة'],HEAD)}
+    ${row([tot.inQ,tot.outQ,tot.dmQ,tot.open,tot.close,tot.cnt,tot.moved,tot.warn],'font-weight:bold;font-size:12pt;')}
+    ${sheets.filter(s=>s.body.length).map(s=>`<tr></tr>
+      ${full(s.title,'background:#E4F1EE;color:#0A5B52;font-weight:bold;font-size:12pt')}
+      ${row(s.head,HEAD)}
+      ${s.body.map(r=>row(r)).join('')}
+      ${s.foot?row(s.foot,'background:#F1F5F4;font-weight:bold;'):''}`).join('')}
+  </table></body></html>`;
+  const fname=P.mode==='month'?`تقرير_المخزون_${P.ym}`:P.mode==='day'?`تقرير_المخزون_${P.from}`:`تقرير_المخزون_${P.from}_إلى_${P.to}`;
+  dl(new Blob(['﻿'+html],{type:'application/vnd.ms-excel'}),fname+'.xls');
 }
-function doPrint(){printRep(repData())}
-function doExcel(){excelRep(repData())}
-function doPrintDay(){printRep(repDataDay())}
-function doExcelDay(){excelRep(repDataDay())}
 function dl(blob,name){
   try{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;
     document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1200);toast('تم تجهيز الملف.')}
@@ -994,10 +1087,11 @@ function bind(){
         case 'toggle':{const k=+el.dataset.k;F.open=F.open===k?null:k;render();break}
         case 'mprev':{F.mpage=Math.max(0,(F.mpage||0)-1);render();break}
         case 'mnext':{F.mpage=(F.mpage||0)+1;render();break}
-        case 'print':doPrint();break;
-        case 'excel':doExcel();break;
-        case 'printday':doPrintDay();break;
-        case 'excelday':doExcelDay();break;
+        case 'pmode':{F.pmode=el.dataset.v;delete F.open;render();break}
+        case 'ridle':{F.ridle=!F.ridle;delete F.open;render();break}
+        case 'mvall':{F.mvall=!F.mvall;render();break}
+        case 'repprint':repPrint();break;
+        case 'repexcel':repExcel();break;
         case 'backup':{
           const data=VIEW==='all'?DB:{items:visItems(),moves:visMoves()};
           dl(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),`نسخة_المخزون_${today()}.json`);break}
