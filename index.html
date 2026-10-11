@@ -118,7 +118,7 @@ select.badge-branch{border:none;appearance:none;-webkit-appearance:none;-moz-app
 #print-zone .pr-title h1{font-size:16px;margin:0;color:#0E6E63}
 #print-zone .pr-title div{font-size:11.5px;font-weight:700}
 #print-zone .pr-meta{display:flex;flex-wrap:wrap;gap:4px 18px;background:#F4F6F5;border:1px solid #DCE4E3;border-radius:6px;padding:6px 10px;margin-bottom:8px}
-#print-zone .pr-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px}
+#print-zone .pr-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px}
 #print-zone .pr-kpis div{border:1px solid #DCE4E3;border-top:3px solid #0E6E63;border-radius:6px;padding:5px 8px}
 #print-zone .pr-kpis span{display:block;font-size:9px;color:#5C7076;font-weight:700}
 #print-zone .pr-kpis b{display:block;font-size:15px}
@@ -527,7 +527,7 @@ function vMove(){
 }
 
 /* ---------- 5) التقارير (يومي / شهري / فترة محددة) ---------- */
-/* تقرير واحد مختصر: أرقام سريعة، الأكثر صرفًا، حسب التصنيف، وأصناف تحتاج طلب.
+/* تقرير واحد مختصر: أرقام سريعة، الأكثر صرفًا، وحسب التصنيف.
    تفاصيل كل الأصناف مخفية ورا زر، وموجودة كاملة في الإكسل */
 const TOP_N=10;
 /* حساب اليوم السابق بالـ UTC — الحساب بالتوقيت المحلي كان يرجّع يومين ورا في السعودية */
@@ -581,11 +581,8 @@ function repCompute(){
     const x=cats[c]=cats[c]||{cat:c,items:0,outN:0,outU:{},dmU:{}};
     if(r.outQ>0)x.items++;x.outN+=r.outN;unitAdd(x.outU,r.i.unit,r.outQ);unitAdd(x.dmU,r.i.unit,r.dmQ)});
   const catRows=Object.values(cats).filter(c=>c.outN||Object.keys(c.dmU).length).sort((a,b)=>b.outN-a.outN||a.cat.localeCompare(b.cat,'ar'));
-  /* تحتاج طلب = الوضع الحالي (مو الفترة): منخفض أو نفد */
-  const need=activeItems().filter(i=>!cat||(i.category||'')===cat).map(i=>({i,b:bal(i.id)}))
-    .filter(x=>st(x.b,x.i.min).k!=='ok').sort((a,b)=>a.b-b.b||a.i.name.localeCompare(b.i.name,'ar'));
   const moves=allMv.slice().sort((a,b)=>a.date.localeCompare(b.date));
-  return {P,cat,rows,top,catRows,need,tot,moves,branchLabel:VIEW==='all'?'كل الفروع':VIEW};
+  return {P,cat,rows,top,catRows,tot,moves,branchLabel:VIEW==='all'?'كل الفروع':VIEW};
 }
 
 /* جملة تلخّص الفترة بالعربي البسيط */
@@ -602,10 +599,7 @@ function repSections(R,full){
      body:R.top.map((r,k)=>[k+1,r.i.name,...br(r.i),r.outN,`${fmt(r.outQ)} ${r.i.unit}`,`${fmt(r.now)} ${r.i.unit}`,coverTxt(r.cover)])},
     {key:'cat',title:'حسب التصنيف',empty:'ما فيه صرف بهالفترة.',
      head:['التصنيف','أصناف انصرفت','مرات الصرف','المنصرف','التالف'],
-     body:R.catRows.map(c=>[c.cat,c.items,c.outN,unitTxt(c.outU),unitTxt(c.dmU)])},
-    {key:'need',title:'أصناف تحتاج طلب (الوضع الحالي)',empty:'كل الأصناف متوفرة.',
-     head:['الصنف',...B,'الرصيد الحالي','الحد الأدنى','الحالة'],
-     body:R.need.map(x=>[x.i.name,...br(x.i),`${fmt(Math.max(0,x.b))} ${x.i.unit}`,n(x.i.min)?`${fmt(x.i.min)} ${x.i.unit}`:'—',st(x.b,x.i.min).t])}];
+     body:R.catRows.map(c=>[c.cat,c.items,c.outN,unitTxt(c.outU),unitTxt(c.dmU)])}];
   if(full)S.push({key:'all',title:'تفاصيل كل الأصناف اللي تحرّكت',empty:'ما فيه حركة.',
      head:['الصنف','التصنيف',...B,'الوحدة','أول المدة','الوارد','المنصرف','التالف','آخر المدة'],
      body:R.rows.map(r=>[r.i.name,r.i.category||'—',...br(r.i),r.i.unit,r.open,r.inQ,r.outQ,r.dmQ,r.close])},
@@ -617,15 +611,13 @@ function repSections(R,full){
 const repKpis=R=>[
   {l:'عمليات الصرف',v:R.tot.outN,s:`${R.tot.outItems} صنف`,c:'k-out'},
   {l:'عمليات الوارد',v:R.tot.inN,s:`${R.tot.inItems} صنف`,c:'k-in'},
-  {l:'عمليات التالف',v:R.tot.dmN,s:`${R.tot.dmItems} صنف`,c:'k-dmg'},
-  {l:'تحتاج طلب',v:R.need.length,s:'منخفض أو نفد',c:'k-warn'}];
+  {l:'عمليات التالف',v:R.tot.dmN,s:`${R.tot.dmItems} صنف`,c:'k-dmg'}];
 
-const CELL_C={'نفد':'c-red','منخفض':'c-amb'};
 function vRep(){
   const R=repCompute(),{P}=R;
   const months=[...new Set([ym(today()),...visMoves().map(m=>ym(m.date))])].filter(Boolean).sort().reverse();
   const cell=c=>typeof c==='number'?`<td class="num">${fmt(c)}</td>`
-    :c==='نفد'||c==='منخفض'?`<td><span class="tag ${c==='نفد'?'zero':'low'}">${c}</span></td>`:`<td class="wrap">${esc(c)}</td>`;
+    :`<td class="wrap">${esc(c)}</td>`;
   const sec=s=>`<div class="card">
     <div class="card-h"><h3>${esc(s.title)}</h3>${s.body.length?`<span class="sub">${s.body.length}</span>`:''}</div>
     ${s.body.length?`<div class="tblwrap"><table><thead><tr>${s.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
@@ -663,7 +655,7 @@ function vRep(){
 /* ---------- الطباعة والتصدير ---------- */
 function repPrint(){
   const R=repCompute(),{P}=R;
-  const cell=c=>typeof c==='number'?`<td class="num">${fmt(c)}</td>`:`<td${CELL_C[c]?` class="${CELL_C[c]}"`:''}>${esc(c)}</td>`;
+  const cell=c=>typeof c==='number'?`<td class="num">${fmt(c)}</td>`:`<td>${esc(c)}</td>`;
   const tbl=s=>`<h3>${esc(s.title)}</h3>${s.body.length?`<table><thead><tr>${s.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
     <tbody>${s.body.map(r=>`<tr>${r.map(cell).join('')}</tr>`).join('')}</tbody></table>`:`<p class="pr-empty">${esc(s.empty)}</p>`}`;
   $('#print-zone').innerHTML=`<div class="pr">
@@ -682,7 +674,7 @@ function repPrint(){
 }
 function repExcel(){
   const R=repCompute(),{P}=R;
-  if(!R.rows.length&&!R.need.length)return toast('لا توجد بيانات للتصدير.','bad');
+  if(!R.rows.length)return toast('لا توجد بيانات للتصدير.','bad');
   const S=repSections(R,true), W=Math.max(...S.map(s=>s.head.length));
   const B='border:.5pt solid #9AA9A7;';
   const cell=(c,s='')=>typeof c==='number'?`<td style="${B}${s}text-align:center">${c}</td>`:`<td style="${B}${s}">${esc(c)}</td>`;
