@@ -291,7 +291,7 @@ function minBalFrom(id,d){
   const dates=[...new Set(DB.moves.filter(m=>m.itemId===id&&m.date>d).map(m=>m.date))];
   return Math.min(bal(id,d),bal(id),...dates.map(x=>bal(id,x)));
 }
-const st=(b,min)=> n(b)<=0?{k:'zero',t:'نفد'} : (n(min)>0&&n(b)<=n(min)?{k:'low',t:'منخفض'}:{k:'ok',t:'متوفر'});
+const st=(b,min)=> n(b)<-1e-9?{k:'zero',t:'سالب'} : n(b)<=0?{k:'zero',t:'نفد'} : (n(min)>0&&n(b)<=n(min)?{k:'low',t:'منخفض'}:{k:'ok',t:'متوفر'});
 
 /* تنبيهات واتساب للأصناف اللي وصلت للحد الأدنى */
 const BRANCH_WHATS={'الفرع الرئيسي':'966533228036','فرع الرياض':'966501027553'};
@@ -325,11 +325,25 @@ function vOpen(){
   if(q)list=list.filter(i=>matchName(i.name,q));
   if(F.qcat)list=list.filter(i=>(i.category||'')===F.qcat);
   const low=lowItems();
+  const neg=activeItems().map(i=>({i,b:bal(i.id)})).filter(x=>x.b<-1e-9);
+  const pendFor=i=>pendingRc().filter(r=>(r.branch||DEFAULT_BRANCH)===(i.branch||DEFAULT_BRANCH)&&sameName(r.name,i.name));
   const lowByBranch={};
   low.forEach(x=>{const br=x.i.branch||DEFAULT_BRANCH;(lowByBranch[br]=lowByBranch[br]||[]).push(x)});
   return `
   <div class="pagehead"><h2>الرصيد الافتتاحي</h2>
     <p>أضف أصنافك والكميات الموجودة في المخزن عند البداية. الرصيد الحالي يُحسب تلقائيًا.</p></div>
+
+  ${neg.length?`<div class="card" style="border-color:#E8CFCC">
+    <div class="card-h"><h3 style="color:var(--red)">⛔ أرصدة بالسالب — تحتاج مراجعة</h3><span class="sub">${neg.length} صنف</span></div>
+    <div class="card-b" style="padding-bottom:0"><p class="note" style="margin:0 0 10px">الرصيد السالب يعني إن المنصرف أكثر من المسجّل كوارد. أشهر الأسباب: فاتورة انحذفت من المشتريات بعد ما انصرف منها (فتنحذف حركة الوارد معها)، أو توريد ما انأكد للحين، أو صرف مسجّل بتاريخ قبل وصول البضاعة.</p></div>
+    <div class="tblwrap"><table><thead><tr><th>الصنف</th>${VIEW==='all'?'<th>الفرع</th>':''}<th class="num">الرصيد</th><th>الملاحظة</th>${CUR_ALL?'<th></th>':''}</tr></thead>
+    <tbody>${neg.map(x=>{const pr=pendFor(x.i);return `<tr>
+      <td class="wrap"><b>${esc(x.i.name)}</b></td>
+      ${VIEW==='all'?`<td><span class="badge-branch">${esc(x.i.branch||DEFAULT_BRANCH)}</span></td>`:''}
+      <td class="num" style="color:var(--red)">${fmt(x.b)} ${esc(x.i.unit)}</td>
+      <td class="wrap" style="font-size:12.5px">${pr.length?`<button class="btn sm primary" data-a="gorcv">فيه توريد معلّق بنفس الاسم (${pr.map(r=>fmt(r.qty)+' '+esc(r.unit)).join('، ')}) — أكّده</button>`:'راجع آخر حركاته بتبويب الوارد/المنصرف'}</td>
+      ${CUR_ALL?`<td><button class="btn ghost sm" data-a="fixneg" data-id="${x.i.id}">تسوية</button></td>`:''}</tr>`}).join('')}</tbody></table></div>
+  </div>`:''}
 
   ${low.length?`<div class="card" style="border-color:#F0C89C">
     <div class="card-h"><h3 style="color:var(--amber)">⚠️ أصناف منخفضة أو نفدت</h3><span class="sub">${low.length} صنف</span></div>
@@ -1168,6 +1182,14 @@ function bind(){
     el.onclick=()=>{
       switch(a){
         case 'goopen':go('open');break;
+        case 'gorcv':go('rcv');break;
+        case 'fixneg':{  // تسوية جرد: حركة وارد تصفّر الرصيد السالب، بسبب مكتوب — للإدارة فقط
+          if(!CUR_ALL)break;
+          const i=it(el.dataset.id);if(!i)break;const b=bal(i.id);if(b>=0)break;
+          const why=prompt(`تسوية «${i.name}»: بتنضاف حركة وارد ${fmt(-b)} ${i.unit} عشان الرصيد يصير صفر.\n\nاكتب السبب (مثال: فاتورة انحذفت من المشتريات بعد الصرف):`);
+          if(why===null)return;if(!why.trim())return toast('اكتب سبب التسوية.','bad');
+          const mv={id:uid(),type:'in',date:today(),no:'تسوية',party:'تسوية جرد',itemId:i.id,qty:R3(-b),notes:'تسوية رصيد سالب — '+why.trim(),by:CUR_EMAIL||''};
+          DB.moves.push(mv);saveMove(mv);render();toast(`تمت التسوية — رصيد ${i.name} صار صفر.`);break}
         case 'rcopen':{const r=rcById(el.dataset.id);if(r){rcOpen(r);render()}break}
         case 'rcclose':{RC_KEYS.forEach(k=>delete F[k]);render();break}
         case 'rcsplit':{F.rmode='split';F.rparts=[];F.rsq=(rcById(F.rid)||{}).name?rcById(F.rid).name+' ':'';render();const s=document.getElementById('rc-s');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length)}break}
