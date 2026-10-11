@@ -538,6 +538,9 @@ const branchOf=i=>(i&&i.branch)||DEFAULT_BRANCH;
 /* الكميات تُجمع لكل وحدة على حدة ("26 حبة + 85 متر") بدل جمع حبة مع متر */
 const unitAdd=(g,u,v)=>{if(n(v)){u=u||'—';g[u]=(g[u]||0)+n(v)}return g};
 const unitTxt=g=>Object.entries(g).filter(([,v])=>v).sort((a,b)=>b[1]-a[1]).map(([u,v])=>`${fmt(v)} ${u}`).join(' + ')||'—';
+/* مصدر الحركة: توريد من المشتريات، صادر من نظام الشوكولاتة، تسوية جرد، أو إدخال يدوي */
+const srcOf=m=>m.receiptId?(String(m.receiptId).startsWith('choco_')?'من الشوكولاتة':'توريد مشتريات'):m.no==='تسوية'?'تسوية جرد':'يدوي';
+const TYPE_T={in:'وارد',out:'منصرف',damage:'تالف'};
 const coverTxt=c=>c==null?'—':c<1?'أقل من يوم':c>=365?'أكثر من سنة':`${Math.floor(c)} يوم`;
 
 function repPeriod(){
@@ -581,7 +584,8 @@ function repCompute(){
   /* تحتاج طلب = الوضع الحالي (مو الفترة): منخفض أو نفد */
   const need=activeItems().filter(i=>!cat||(i.category||'')===cat).map(i=>({i,b:bal(i.id)}))
     .filter(x=>st(x.b,x.i.min).k!=='ok').sort((a,b)=>a.b-b.b||a.i.name.localeCompare(b.i.name,'ar'));
-  return {P,cat,rows,top,catRows,need,tot,branchLabel:VIEW==='all'?'كل الفروع':VIEW};
+  const moves=allMv.slice().sort((a,b)=>a.date.localeCompare(b.date));
+  return {P,cat,rows,top,catRows,need,tot,moves,branchLabel:VIEW==='all'?'كل الفروع':VIEW};
 }
 
 /* جملة تلخّص الفترة بالعربي البسيط */
@@ -604,7 +608,10 @@ function repSections(R,full){
      body:R.need.map(x=>[x.i.name,...br(x.i),`${fmt(Math.max(0,x.b))} ${x.i.unit}`,n(x.i.min)?`${fmt(x.i.min)} ${x.i.unit}`:'—',st(x.b,x.i.min).t])}];
   if(full)S.push({key:'all',title:'تفاصيل كل الأصناف اللي تحرّكت',empty:'ما فيه حركة.',
      head:['الصنف','التصنيف',...B,'الوحدة','أول المدة','الوارد','المنصرف','التالف','آخر المدة'],
-     body:R.rows.map(r=>[r.i.name,r.i.category||'—',...br(r.i),r.i.unit,r.open,r.inQ,r.outQ,r.dmQ,r.close])});
+     body:R.rows.map(r=>[r.i.name,r.i.category||'—',...br(r.i),r.i.unit,r.open,r.inQ,r.outQ,r.dmQ,r.close])},
+    {key:'log',title:'سجل العمليات',empty:'ما فيه عمليات.',
+     head:['التاريخ','النوع','الصنف',...B,'الكمية','الجهة / المورد','المصدر','ملاحظات'],
+     body:R.moves.map(m=>{const i=it(m.itemId)||{};return [dH(m.date),TYPE_T[m.type]||m.type,i.name||'—',...br(i),`${fmt(m.qty)} ${i.unit||''}`,m.party||'—',srcOf(m),m.notes||'—']})});
   return S;
 }
 const repKpis=R=>[
@@ -647,10 +654,10 @@ function vRep(){
   <div class="kpis">${repKpis(R).map(k=>`<div class="kpi ${k.c}"><span>${k.l}</span><b>${k.v}</b><small>${esc(k.s)}</small></div>`).join('')}</div>
   <p class="lead">${esc(repSentence(R))}</p>
 
-  ${S.filter(s=>s.key!=='all').map(sec).join('')}
+  ${S.filter(s=>s.key!=='all'&&s.key!=='log').map(sec).join('')}
 
-  ${R.rows.length?(F.rfull?sec(S[S.length-1]):'')+`<div style="text-align:center;margin-top:14px">
-    <button class="btn" data-a="rfull">${F.rfull?'إخفاء تفاصيل الأصناف':`عرض تفاصيل كل الأصناف (${R.rows.length})`}</button></div>`:''}`;
+  ${R.rows.length?(F.rfull?S.filter(s=>s.key==='all'||s.key==='log').map(sec).join(''):'')+`<div style="text-align:center;margin-top:14px">
+    <button class="btn" data-a="rfull">${F.rfull?'إخفاء التفاصيل':`عرض تفاصيل كل الأصناف وسجل العمليات (${R.moves.length} عملية)`}</button></div>`:''}`;
 }
 
 /* ---------- الطباعة والتصدير ---------- */
