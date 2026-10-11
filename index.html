@@ -282,6 +282,11 @@ function bal(id,upto){
     b+= m.type==='in'?n(m.qty):-n(m.qty)});
   return b;
 }
+/* أقل رصيد من تاريخ معيّن لين اليوم — يُستخدم للتحقق من عمليات الصرف بتاريخ قديم */
+function minBalFrom(id,d){
+  const dates=[...new Set(DB.moves.filter(m=>m.itemId===id&&m.date>d).map(m=>m.date))];
+  return Math.min(bal(id,d),bal(id),...dates.map(x=>bal(id,x)));
+}
 const st=(b,min)=> n(b)<=0?{k:'zero',t:'نفد'} : (n(min)>0&&n(b)<=n(min)?{k:'low',t:'منخفض'}:{k:'ok',t:'متوفر'});
 
 /* تنبيهات واتساب للأصناف اللي وصلت للحد الأدنى */
@@ -522,7 +527,7 @@ function repPeriod(){
 }
 
 function repCompute(){
-  const P=repPeriod(), type=F.ptype||'all', cat=F.rcat||'', q=(F.rq||'').trim();
+  const P=repPeriod(), type=F.ptype||'all', cat=F.rcat||'', q=(F.repq||'').trim();
   const items=visItems().filter(i=>(!cat||(i.category||'')===cat)&&(!q||matchName(i.name,q)));
   const ids=new Set(items.map(i=>i.id)), byItem={};
   DB.moves.forEach(m=>{if(ids.has(m.itemId)&&m.date>=P.from&&m.date<=P.to)(byItem[m.itemId]=byItem[m.itemId]||[]).push(m)});
@@ -598,7 +603,7 @@ function vRep(){
       <label class="f"><span>نوع الحركة</span><select data-f="ptype">${PTYPES.map(([k,t])=>`<option value="${k}" ${type===k?'selected':''}>${t}</option>`).join('')}</select></label>
       <label class="f"><span>التصنيف</span><select data-f="rcat"><option value="">كل التصنيفات</option>
         ${allCats().map(c=>`<option value="${esc(c)}" ${F.rcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
-      <label class="f"><span>بحث عن صنف</span><input id="rep-q" data-f="rq" data-live="1" autocomplete="off" value="${esc(F.rq||'')}" placeholder="اكتب جزءًا من الاسم..."></label>
+      <label class="f"><span>بحث عن صنف</span><input id="rep-q" data-f="repq" data-live="1" autocomplete="off" value="${esc(F.repq||'')}" placeholder="اكتب جزءًا من الاسم..."></label>
     </div>
     <div class="btnrow" style="margin-top:12px;align-items:center">
       <button class="btn primary" data-a="repprint">طباعة / PDF</button>
@@ -1032,7 +1037,10 @@ function bind(){
             }
             i.name=v;saveItemFields(i.id,{name:v});
           });
-          R.querySelectorAll('[data-op]').forEach(x=>{const i=it(x.dataset.op);if(i){const v=n(x.value);if(v!==i.opening){i.opening=v;saveItemFields(i.id,{opening:v})}}});
+          R.querySelectorAll('[data-op]').forEach(x=>{const i=it(x.dataset.op);if(i){const v=n(x.value);if(v!==n(i.opening)){
+            const after=bal(i.id)-n(i.opening)+v;
+            if(after<0){toast(`«${i.name}»: الافتتاحي ${fmt(v)} يخلّي الرصيد بالسالب (${fmt(after)}) — تم تجاهل هذا التعديل.`,'bad');x.value=n(i.opening);nameErr=true;return}
+            i.opening=v;saveItemFields(i.id,{opening:v})}}});
           R.querySelectorAll('[data-mn]').forEach(x=>{const i=it(x.dataset.mn);if(i){const v=n(x.value);if(v!==i.min){i.min=v;saveItemFields(i.id,{min:v})}}});
           R.querySelectorAll('[data-cat]').forEach(x=>{const i=it(x.dataset.cat);if(i){const v=x.value.trim();if(v!==(i.category||'')){i.category=v;saveItemFields(i.id,{category:v})}}});
           R.querySelectorAll('[data-unit]').forEach(x=>{const i=it(x.dataset.unit);if(i&&x.value.trim()){const v=x.value.trim();if(v!==i.unit){i.unit=v;saveItemFields(i.id,{unit:v})}}});
@@ -1063,8 +1071,9 @@ function bind(){
           if(!iid)return toast('اختر الصنف من نتائج البحث أولاً.','bad');
           if(q<=0)return toast('أدخل كمية أكبر من صفر.','bad');
           if(type==='out'||type==='damage'){
-            const av=bal(iid);
-            if(q>av)return toast(`المتاح من «${it(iid).name}» هو ${fmt(av)} فقط.`,'bad');
+            const d=F.mdate||today();
+            const av=minBalFrom(iid,d);   // عملية بتاريخ قديم لازم ما تخلّي الرصيد سالب بأي يوم بعدها
+            if(q>av)return toast(`المتاح من «${it(iid).name}» ${d<today()?`بتاريخ ${dH(d)} `:''}هو ${fmt(av)} فقط.`,'bad');
           }
           const newMove={id:uid(),type,date:F.mdate||today(),no:(F.mno||'').trim(),
             party:(F.mparty||'').trim(),itemId:iid,qty:q,notes:(F.mnotes||'').trim(),by:CUR_EMAIL||''};
@@ -1082,6 +1091,8 @@ function bind(){
           const mid=el.dataset.id;
           const mvx=DB.moves.find(m=>m.id===mid);
           if(mvx&&mvx.receiptId&&!CUR_ALL)return toast('هذي الحركة من توريد مشتريات — حذفها من صلاحية الإدارة.','bad');
+          const neg=mvx&&mvx.type==='in'&&bal(mvx.itemId)-n(mvx.qty)<0;
+          if(neg&&!confirm(`تنبيه: حذف هذا الوارد يخلّي رصيد «${(it(mvx.itemId)||{}).name}» بالسالب (${fmt(bal(mvx.itemId)-n(mvx.qty))}) لأن جزء منه انصرف. متأكد؟`))return;
           if(!confirm(mvx&&mvx.receiptId?'هذي الحركة جاية من توريد مشتريات مؤكد. حذفها يخصم الكمية من الرصيد لكن التوريد يظل «مستلم» عند المشتريات. متابعة؟':'حذف هذه العملية؟ سيُعاد حساب الرصيد تلقائيًا.'))return;
           DB.moves=DB.moves.filter(m=>m.id!==mid);deleteMoveRemote(mid);render();toast('تم الحذف وتحديث الرصيد.');break}
         case 'toggle':{const k=+el.dataset.k;F.open=F.open===k?null:k;render();break}
