@@ -193,9 +193,10 @@ const BRANCHES=['الفرع الرئيسي','فرع الرياض'];
 const ACCESS_MAP={
   'algobiry2016@gmail.com':{branch:'all'},
   'dm.flowers11@gmail.com':{branch:'all'},
-  'ahmeddmflowers@gmail.com':{branch:'فرع الرياض'}
+  'ahmeddmflowers@gmail.com':{branch:'فرع الرياض'},
+  'demployee93@gmail.com':{branch:'الفرع الرئيسي'}
 };
-const DEFAULT_BRANCH='الفرع الرئيسي'; // أي بريد غير مذكور أعلاه يُعتبر تلقائيًا موظف الفرع الرئيسي
+const DEFAULT_BRANCH='الفرع الرئيسي'; // فرع الأصناف القديمة اللي ما لها فرع محدد — أي بريد غير مذكور أعلاه ما يدخل النظام
 let RC=[], RMAP={};                   // التوريدات الواردة من المشتريات + ذاكرة ربط أصنافها
 /* حسابات المشتريات فقط — ما تدخل نظام المخزون (حسابها موجود بس عشان إرسال التوريدات) */
 const PURCHASE_ONLY=['ashrfmohamed787@gmail.com'];
@@ -203,7 +204,7 @@ let DB={items:[],moves:[]};           // items: {..., branch}; moves: {id,type:'
 let V='open', F={};
 let noStore=false;
 let CUR_EMAIL=null, CUR_BRANCH=null, CUR_ALL=false, VIEW=null;
-const access=email=>ACCESS_MAP[(email||'').toLowerCase()]||{branch:DEFAULT_BRANCH};
+const access=email=>ACCESS_MAP[(email||'').toLowerCase()]||null;
 /* الأصناف/الحركات المرئية حسب الفرع المختار حاليًا للعرض (VIEW) */
 const visItems=()=>VIEW==='all'?DB.items:DB.items.filter(i=>(i.branch||DEFAULT_BRANCH)===VIEW);
 const activeItems=()=>visItems().filter(i=>!i.archived);
@@ -286,12 +287,21 @@ function bal(id,upto){
     b+= m.type==='in'?n(m.qty):-n(m.qty)});
   return b;
 }
+/* لو الرصيد نزل تحت الصفر بأي يوم: كمية التسوية (أعمق سالب) وأول يوم صار فيه سالب.
+   التسوية بتاريخ أول يوم سالب تخلّي الرصيد صفر أو أكثر بكل الأيام، فحتى تقارير الأشهر الماضية تنضبط */
+function negInfo(id){
+  const dates=[...new Set(DB.moves.filter(m=>m.itemId===id).map(m=>m.date).filter(Boolean))].sort();
+  let min=0,first=null;
+  dates.forEach(d=>{const b=bal(id,d);if(b<min)min=b;if(b<-1e-9&&!first)first=d});
+  return first?{qty:R3(-min),date:first,now:bal(id)}:null;
+}
+const negItems=()=>visItems().map(i=>({i,x:negInfo(i.id)})).filter(r=>r.x);
 /* أقل رصيد من تاريخ معيّن لين اليوم — يُستخدم للتحقق من عمليات الصرف بتاريخ قديم */
 function minBalFrom(id,d){
   const dates=[...new Set(DB.moves.filter(m=>m.itemId===id&&m.date>d).map(m=>m.date))];
   return Math.min(bal(id,d),bal(id),...dates.map(x=>bal(id,x)));
 }
-const st=(b,min)=> n(b)<-1e-9?{k:'zero',t:'سالب'} : n(b)<=0?{k:'zero',t:'نفد'} : (n(min)>0&&n(b)<=n(min)?{k:'low',t:'منخفض'}:{k:'ok',t:'متوفر'});
+const st=(b,min)=> n(b)<=0?{k:'zero',t:'نفد'} : (n(min)>0&&n(b)<=n(min)?{k:'low',t:'منخفض'}:{k:'ok',t:'متوفر'});
 
 /* تنبيهات واتساب للأصناف اللي وصلت للحد الأدنى */
 const BRANCH_WHATS={'الفرع الرئيسي':'966533228036','فرع الرياض':'966501027553'};
@@ -325,7 +335,7 @@ function vOpen(){
   if(q)list=list.filter(i=>matchName(i.name,q));
   if(F.qcat)list=list.filter(i=>(i.category||'')===F.qcat);
   const low=lowItems();
-  const neg=activeItems().map(i=>({i,b:bal(i.id)})).filter(x=>x.b<-1e-9);
+  const neg=negItems();
   const pendFor=i=>pendingRc().filter(r=>(r.branch||DEFAULT_BRANCH)===(i.branch||DEFAULT_BRANCH)&&sameName(r.name,i.name));
   const lowByBranch={};
   low.forEach(x=>{const br=x.i.branch||DEFAULT_BRANCH;(lowByBranch[br]=lowByBranch[br]||[]).push(x)});
@@ -334,15 +344,15 @@ function vOpen(){
     <p>أضف أصنافك والكميات الموجودة في المخزن عند البداية. الرصيد الحالي يُحسب تلقائيًا.</p></div>
 
   ${neg.length?`<div class="card" style="border-color:#E8CFCC">
-    <div class="card-h"><h3 style="color:var(--red)">⛔ أرصدة بالسالب — تحتاج مراجعة</h3><span class="sub">${neg.length} صنف</span></div>
-    <div class="card-b" style="padding-bottom:0"><p class="note" style="margin:0 0 10px">الرصيد السالب يعني إن المنصرف أكثر من المسجّل كوارد. أشهر الأسباب: فاتورة انحذفت من المشتريات بعد ما انصرف منها (فتنحذف حركة الوارد معها)، أو توريد ما انأكد للحين، أو صرف مسجّل بتاريخ قبل وصول البضاعة.</p></div>
-    <div class="tblwrap"><table><thead><tr><th>الصنف</th>${VIEW==='all'?'<th>الفرع</th>':''}<th class="num">الرصيد</th><th>الملاحظة</th>${CUR_ALL?'<th></th>':''}</tr></thead>
-    <tbody>${neg.map(x=>{const pr=pendFor(x.i);return `<tr>
-      <td class="wrap"><b>${esc(x.i.name)}</b></td>
-      ${VIEW==='all'?`<td><span class="badge-branch">${esc(x.i.branch||DEFAULT_BRANCH)}</span></td>`:''}
-      <td class="num" style="color:var(--red)">${fmt(x.b)} ${esc(x.i.unit)}</td>
-      <td class="wrap" style="font-size:12.5px">${pr.length?`<button class="btn sm primary" data-a="gorcv">فيه توريد معلّق بنفس الاسم (${pr.map(r=>fmt(r.qty)+' '+esc(r.unit)).join('، ')}) — أكّده</button>`:'راجع آخر حركاته بتبويب الوارد/المنصرف'}</td>
-      ${CUR_ALL?`<td><button class="btn ghost sm" data-a="fixneg" data-id="${x.i.id}">تسوية</button></td>`:''}</tr>`}).join('')}</tbody></table></div>
+    <div class="card-h"><h3 style="color:var(--red)">⛔ أرصدة غير مضبوطة — تحتاج تسوية</h3>
+      ${CUR_ALL?`<button class="btn primary sm" data-a="fixneg">تسوية الكل (${neg.length})</button>`:`<span class="sub">${neg.length} صنف</span>`}</div>
+    <div class="card-b" style="padding-bottom:0"><p class="note" style="margin:0 0 10px">هالأصناف انصرف منها أكثر من المسجّل كوارد بيوم من الأيام — غالبًا فاتورة انحذفت من المشتريات بعد ما انصرف منها. التسوية تضيف وارد «تسوية جرد» بتاريخ أول يوم صار فيه الخلل، فيرجع الرصيد صفر أو أكثر بكل الأيام والتقارير.${CUR_ALL?'':' <b>بلّغ الإدارة لتسويتها.</b>'}</p></div>
+    <div class="tblwrap"><table><thead><tr><th>الصنف</th>${VIEW==='all'?'<th>الفرع</th>':''}<th class="num">الرصيد الحالي</th><th class="num">كمية التسوية</th><th>من تاريخ</th><th>ملاحظة</th></tr></thead>
+    <tbody>${neg.map(r=>{const pr=pendFor(r.i);return `<tr>
+      <td class="wrap"><b>${esc(r.i.name)}</b></td>
+      ${VIEW==='all'?`<td><span class="badge-branch">${esc(r.i.branch||DEFAULT_BRANCH)}</span></td>`:''}
+      <td class="num">${fmt(r.x.now)} ${esc(r.i.unit)}</td><td class="num">+${fmt(r.x.qty)}</td><td>${dH(r.x.date)}</td>
+      <td class="wrap" style="font-size:12.5px">${pr.length?`<button class="btn sm" data-a="gorcv">فيه توريد معلّق بنفس الاسم (${pr.map(q=>fmt(q.qty)+' '+esc(q.unit)).join('، ')}) — أكّده قبل التسوية</button>`:'—'}</td></tr>`}).join('')}</tbody></table></div>
   </div>`:''}
 
   ${low.length?`<div class="card" style="border-color:#F0C89C">
@@ -1183,13 +1193,15 @@ function bind(){
       switch(a){
         case 'goopen':go('open');break;
         case 'gorcv':go('rcv');break;
-        case 'fixneg':{  // تسوية جرد: حركة وارد تصفّر الرصيد السالب، بسبب مكتوب — للإدارة فقط
+        case 'fixneg':{  // تسوية جرد للأصناف اللي نزل رصيدها تحت الصفر — للإدارة فقط
           if(!CUR_ALL)break;
-          const i=it(el.dataset.id);if(!i)break;const b=bal(i.id);if(b>=0)break;
-          const why=prompt(`تسوية «${i.name}»: بتنضاف حركة وارد ${fmt(-b)} ${i.unit} عشان الرصيد يصير صفر.\n\nاكتب السبب (مثال: فاتورة انحذفت من المشتريات بعد الصرف):`);
+          const list=negItems();if(!list.length)break;
+          const why=prompt(`تسوية ${list.length} صنف: بتنضاف حركة وارد «تسوية جرد» لكل صنف بتاريخ أول يوم صار فيه الخلل.\n\nاكتب السبب (مثال: فواتير انحذفت من المشتريات بعد الصرف):`);
           if(why===null)return;if(!why.trim())return toast('اكتب سبب التسوية.','bad');
-          const mv={id:uid(),type:'in',date:today(),no:'تسوية',party:'تسوية جرد',itemId:i.id,qty:R3(-b),notes:'تسوية رصيد سالب — '+why.trim(),by:CUR_EMAIL||''};
-          DB.moves.push(mv);saveMove(mv);render();toast(`تمت التسوية — رصيد ${i.name} صار صفر.`);break}
+          const upd={};
+          list.forEach(r=>{const mv={id:uid(),type:'in',date:r.x.date,no:'تسوية',party:'تسوية جرد',itemId:r.i.id,qty:r.x.qty,notes:'تسوية رصيد — '+why.trim(),by:CUR_EMAIL||''};
+            DB.moves.push(mv);upd[`moves/${mv.id}`]=mv});
+          fbWrite(upd);render();toast(`تمت تسوية ${list.length} صنف — الأرصدة مضبوطة الحين.`);break}
         case 'rcopen':{const r=rcById(el.dataset.id);if(r){rcOpen(r);render()}break}
         case 'rcclose':{RC_KEYS.forEach(k=>delete F[k]);render();break}
         case 'rcsplit':{F.rmode='split';F.rparts=[];F.rsq=(rcById(F.rid)||{}).name?rcById(F.rid).name+' ':'';render();const s=document.getElementById('rc-s');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length)}break}
@@ -1232,8 +1244,8 @@ function bind(){
             i.name=v;saveItemFields(i.id,{name:v});
           });
           R.querySelectorAll('[data-op]').forEach(x=>{const i=it(x.dataset.op);if(i){const v=n(x.value);if(v!==n(i.opening)){
-            const after=bal(i.id)-n(i.opening)+v;
-            if(after<0){toast(`«${i.name}»: الافتتاحي ${fmt(v)} يخلّي الرصيد بالسالب (${fmt(after)}) — تم تجاهل هذا التعديل.`,'bad');x.value=n(i.opening);nameErr=true;return}
+            const after=minBalFrom(i.id,'0000-00-00')-n(i.opening)+v;
+            if(after<-1e-9){toast(`«${i.name}»: الافتتاحي ${fmt(v)} أقل من اللي انصرف — يخلّي الرصيد سالب. تم تجاهل هذا التعديل.`,'bad');x.value=n(i.opening);nameErr=true;return}
             i.opening=v;saveItemFields(i.id,{opening:v})}}});
           R.querySelectorAll('[data-mn]').forEach(x=>{const i=it(x.dataset.mn);if(i){const v=n(x.value);if(v!==i.min){i.min=v;saveItemFields(i.id,{min:v})}}});
           R.querySelectorAll('[data-cat]').forEach(x=>{const i=it(x.dataset.cat);if(i){const v=x.value.trim();if(v!==(i.category||'')){i.category=v;saveItemFields(i.id,{category:v})}}});
@@ -1285,8 +1297,8 @@ function bind(){
           const mid=el.dataset.id;
           const mvx=DB.moves.find(m=>m.id===mid);
           if(!CUR_ALL)return toast('حذف الحركات من صلاحية الإدارة فقط — تواصل مع رؤوف أو سعود.','bad');
-          const neg=mvx&&mvx.type==='in'&&bal(mvx.itemId)-n(mvx.qty)<0;
-          if(neg&&!confirm(`تنبيه: حذف هذا الوارد يخلّي رصيد «${(it(mvx.itemId)||{}).name}» بالسالب (${fmt(bal(mvx.itemId)-n(mvx.qty))}) لأن جزء منه انصرف. متأكد؟`))return;
+          if(mvx&&mvx.type==='in'&&minBalFrom(mvx.itemId,mvx.date)-n(mvx.qty)<-1e-9)
+            return toast(`ما ينفع تحذف هذا الوارد — انصرف منه، وحذفه يخلّي رصيد «${(it(mvx.itemId)||{}).name}» سالب. احذف المنصرف الغلط أول.`,'bad');
           if(!confirm(mvx&&mvx.receiptId?'هذي الحركة جاية من توريد مشتريات مؤكد. حذفها يخصم الكمية من الرصيد لكن التوريد يظل «مستلم» عند المشتريات. متابعة؟':'حذف هذه العملية؟ سيُعاد حساب الرصيد تلقائيًا.'))return;
           DB.moves=DB.moves.filter(m=>m.id!==mid);deleteMoveRemote(mid);render();toast('تم الحذف وتحديث الرصيد.');break}
         case 'toggle':{const k=+el.dataset.k;F.open=F.open===k?null:k;render();break}
@@ -1463,6 +1475,11 @@ if(fbRef){
       return;
     }
     if(user){
+      if(!access(user.email)){
+        firebase.auth().signOut();
+        $('#lg-err').textContent='هذا الحساب غير مصرّح له بنظام المخزون — تواصل مع الإدارة.';
+        return;
+      }
       CUR_EMAIL=user.email; const a=access(CUR_EMAIL); CUR_ALL=a.branch==='all'; CUR_BRANCH=CUR_ALL?null:a.branch;
       VIEW=CUR_ALL?'all':CUR_BRANCH;
       $('#gate').style.display='none'; $('#app').style.display='';
