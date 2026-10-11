@@ -283,14 +283,18 @@ function bal(id,upto){
     b+= m.type==='in'?n(m.qty):-n(m.qty)});
   return b;
 }
-/* لو الرصيد نزل تحت الصفر بأي يوم: كمية التسوية (أعمق سالب) وأول يوم صار فيه سالب.
-   التسوية بتاريخ أول يوم سالب تخلّي الرصيد صفر أو أكثر بكل الأيام، فحتى تقارير الأشهر الماضية تنضبط */
+/* التسوية للأصناف اللي رصيدها الحالي سالب بس، وبالكمية اللي ترجّعه صفر بالضبط.
+   (نزول مؤقت تحت الصفر بيوم قديم ورجع بعده ما يحتاج تسوية — تسويته كانت تزيد الرصيد عن الفعلي)
+   تاريخها = أول يوم من آخر فترة صار فيها الرصيد سالب */
 function negInfo(id){
+  const now=bal(id);if(now>=-1e-9)return null;
   const dates=[...new Set(DB.moves.filter(m=>m.itemId===id).map(m=>m.date).filter(Boolean))].sort();
-  let min=0,first=null;
-  dates.forEach(d=>{const b=bal(id,d);if(b<min)min=b;if(b<-1e-9&&!first)first=d});
-  return first?{qty:R3(-min),date:first,now:bal(id)}:null;
+  let start=null;
+  dates.forEach(d=>{const b=bal(id,d);if(b<-1e-9){if(!start)start=d}else start=null});
+  return {qty:R3(-now),date:start||today(),now};
 }
+/* حركات التسوية والجرد تضبط الرصيد بس — ما تنحسب صرف ولا وارد بالتقارير */
+const isAdj=m=>m.no==='تسوية'||m.party==='تسوية جرد';
 const negItems=()=>visItems().map(i=>({i,x:negInfo(i.id)})).filter(r=>r.x);
 /* أقل رصيد من تاريخ معيّن لين اليوم — يُستخدم للتحقق من عمليات الصرف بتاريخ قديم */
 function minBalFrom(id,d){
@@ -342,7 +346,7 @@ function vOpen(){
   ${neg.length?`<div class="card" style="border-color:#E8CFCC">
     <div class="card-h"><h3 style="color:var(--red)">⛔ أرصدة غير مضبوطة — تحتاج تسوية</h3>
       ${CUR_ALL?`<button class="btn primary sm" data-a="fixneg">تسوية الكل (${neg.length})</button>`:`<span class="sub">${neg.length} صنف</span>`}</div>
-    <div class="card-b" style="padding-bottom:0"><p class="note" style="margin:0 0 10px">هالأصناف انصرف منها أكثر من المسجّل كوارد بيوم من الأيام — غالبًا فاتورة انحذفت من المشتريات بعد ما انصرف منها. التسوية تضيف وارد «تسوية جرد» بتاريخ أول يوم صار فيه الخلل، فيرجع الرصيد صفر أو أكثر بكل الأيام والتقارير.${CUR_ALL?'':' <b>بلّغ الإدارة لتسويتها.</b>'}</p></div>
+    <div class="card-b" style="padding-bottom:0"><p class="note" style="margin:0 0 10px">رصيد هالأصناف الحالي تحت الصفر — غالبًا فاتورة انحذفت من المشتريات بعد ما انصرف منها. التسوية ترجّع الرصيد صفر بالضبط. لو العدد الفعلي بالمخزن غير صفر، استخدم زر «جرد» بجدول الأصناف وحط العدد الفعلي.${CUR_ALL?'':' <b>بلّغ الإدارة لتسويتها.</b>'}</p></div>
     <div class="tblwrap"><table><thead><tr><th>الصنف</th>${VIEW==='all'?'<th>الفرع</th>':''}<th class="num">الرصيد الحالي</th><th class="num">كمية التسوية</th><th>من تاريخ</th><th>ملاحظة</th></tr></thead>
     <tbody>${neg.map(r=>{const pr=pendFor(r.i);return `<tr>
       <td class="wrap"><b>${esc(r.i.name)}</b></td>
@@ -420,7 +424,7 @@ function vOpen(){
         <td>${arch?`<div class="btnrow">
             <button class="btn ghost sm" data-a="restoreitem" data-id="${i.id}">استرجاع</button>
             ${!used?`<button class="btn ghost sm danger" data-a="delitemhard" data-id="${i.id}">حذف نهائي</button>`:''}
-          </div>`:`<button class="btn ghost sm" data-a="delitem" data-id="${i.id}">أرشفة</button>`}</td></tr>`}).join('')}</tbody>
+          </div>`:`<div class="btnrow">${CUR_ALL?`<button class="btn ghost sm" data-a="count" data-id="${i.id}">جرد</button>`:''}<button class="btn ghost sm" data-a="delitem" data-id="${i.id}">أرشفة</button></div>`}</td></tr>`}).join('')}</tbody>
       <tfoot><tr><td colspan="${VIEW==='all'?4:3}">الإجمالي</td><td class="num">${fmt(list.reduce((a,i)=>a+n(i.opening),0))}</td><td></td>
         <td class="num">${fmt(list.reduce((a,i)=>a+bal(i.id),0))}</td><td colspan="2"></td></tr></tfoot></table>`
     :`<div class="empty"><strong>${q?'لا يوجد صنف مطابق للبحث':(F.showArch?'لا توجد أصناف مؤرشفة':'لا توجد أصناف بعد')}</strong>${q?'جرّب كلمة أخرى.':(F.showArch?'':'أضف أول صنف من النموذج بالأعلى.')}</div>`}
@@ -561,13 +565,13 @@ function repCompute(){
   const items=visItems().filter(i=>!cat||(i.category||'')===cat);
   const ids=new Set(items.map(i=>i.id)), byItem={};
   DB.moves.forEach(m=>{if(ids.has(m.itemId)&&m.date>=P.from&&m.date<=P.to)(byItem[m.itemId]=byItem[m.itemId]||[]).push(m)});
-  const sum=(mv,t)=>mv.reduce((a,m)=>a+(m.type===t?n(m.qty):0),0);
-  const cnt=(mv,t)=>mv.filter(m=>m.type===t).length;
+  const sum=(mv,t)=>mv.reduce((a,m)=>a+(m.type===t&&!isAdj(m)?n(m.qty):0),0);
+  const cnt=(mv,t)=>mv.filter(m=>m.type===t&&!isAdj(m)).length;
   const prev=dayBefore(P.from);
   const rows=items.filter(i=>byItem[i.id]).map(i=>{
     const mv=byItem[i.id], inQ=sum(mv,'in'), outQ=sum(mv,'out'), dmQ=sum(mv,'damage');
     const open=Math.max(0,bal(i.id,prev)), now=Math.max(0,bal(i.id)), avg=outQ/P.days;
-    return {i,inQ,outQ,dmQ,open,close:Math.max(0,open+inQ-outQ-dmQ),now,outN:cnt(mv,'out'),
+    return {i,inQ,outQ,dmQ,open,close:Math.max(0,bal(i.id,P.to)),now,outN:cnt(mv,'out'),
       cover:avg>0?now/avg:null};
   }).sort((a,b)=>b.outN-a.outN||b.outQ-a.outQ||a.i.name.localeCompare(b.i.name,'ar'));
   const add=f=>rows.reduce((a,r)=>a+f(r),0);
@@ -949,12 +953,24 @@ function bind(){
         case 'fixneg':{  // تسوية جرد للأصناف اللي نزل رصيدها تحت الصفر — للإدارة فقط
           if(!CUR_ALL)break;
           const list=negItems();if(!list.length)break;
-          const why=prompt(`تسوية ${list.length} صنف: بتنضاف حركة وارد «تسوية جرد» لكل صنف بتاريخ أول يوم صار فيه الخلل.\n\nاكتب السبب (مثال: فواتير انحذفت من المشتريات بعد الصرف):`);
+          const why=prompt(`تسوية ${list.length} صنف: بتنضاف حركة «تسوية جرد» لكل صنف ترجّع رصيده صفر.\n\nاكتب السبب (مثال: فواتير انحذفت من المشتريات بعد الصرف):`);
           if(why===null)return;if(!why.trim())return toast('اكتب سبب التسوية.','bad');
           const upd={};
           list.forEach(r=>{const mv={id:uid(),type:'in',date:r.x.date,no:'تسوية',party:'تسوية جرد',itemId:r.i.id,qty:r.x.qty,notes:'تسوية رصيد — '+why.trim(),by:CUR_EMAIL||''};
             DB.moves.push(mv);upd[`moves/${mv.id}`]=mv});
           fbWrite(upd);render();toast(`تمت تسوية ${list.length} صنف — الأرصدة مضبوطة الحين.`);break}
+        case 'count':{  // جرد صنف واحد: الإدارة تكتب العدد الفعلي والنظام يضبط الرصيد عليه
+          if(!CUR_ALL)break;
+          const i=it(el.dataset.id);if(!i)break;const b=bal(i.id);
+          const v=prompt(`جرد «${i.name}»\nالرصيد بالنظام: ${fmt(b)} ${i.unit}\n\nكم العدد الفعلي الموجود بالمخزن؟`);
+          if(v===null)return;const act=Number(String(v).trim().replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+          if(String(v).trim()===''||!isFinite(act)||act<0)return toast('اكتب رقم صحيح (صفر أو أكثر).','bad');
+          const diff=R3(act-b);if(Math.abs(diff)<1e-9)return toast('الرصيد مطابق للفعلي — ما يحتاج تعديل.');
+          const why=prompt(`بيتعدّل رصيد «${i.name}» من ${fmt(b)} إلى ${fmt(act)} ${i.unit} (${diff>0?'+':''}${fmt(diff)}).\n\nاكتب السبب (مثال: جرد فعلي):`,'جرد فعلي');
+          if(why===null)return;if(!why.trim())return toast('اكتب سبب التعديل.','bad');
+          const mv={id:uid(),type:diff>0?'in':'out',date:today(),no:'تسوية',party:'تسوية جرد',itemId:i.id,qty:Math.abs(diff),
+            notes:`جرد: النظام ${fmt(b)} والفعلي ${fmt(act)} — ${why.trim()}`,by:CUR_EMAIL||''};
+          DB.moves.push(mv);saveMove(mv);render();toast(`تم الجرد — رصيد ${i.name} صار ${fmt(act)} ${i.unit}.`);break}
         case 'rcopen':{const r=rcById(el.dataset.id);if(r){rcOpen(r);render()}break}
         case 'rcclose':{RC_KEYS.forEach(k=>delete F[k]);render();break}
         case 'rcsplit':{F.rmode='split';F.rparts=[];F.rsq=(rcById(F.rid)||{}).name?rcById(F.rid).name+' ':'';render();const s=document.getElementById('rc-s');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length)}break}
