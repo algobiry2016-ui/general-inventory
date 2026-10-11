@@ -93,13 +93,59 @@ select.badge-branch{border:none;appearance:none;-webkit-appearance:none;-moz-app
 .rc-part{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line2);flex-wrap:wrap}
 .rc-part-n{flex:1;min-width:160px;font-weight:600}
 .tab .cnt{display:inline-block;background:var(--amber);color:#fff;border-radius:100px;padding:0 7px;font-size:11px;margin-inline-start:5px}
+/* التقارير */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff;margin-bottom:12px;max-width:100%}
+.seg button{border:0;background:transparent;padding:8px 16px;cursor:pointer;font-weight:700;font-size:13px;color:var(--txt2)}
+.seg button+button{border-inline-start:1px solid var(--line)}
+.seg button.on{background:var(--ink);color:#fff}
+.seg-lg{margin-bottom:14px;display:flex;flex-wrap:wrap}
+.seg-lg button{padding:10px 18px;font-size:14px;flex:1 1 auto}
+.rank{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--line2);font-weight:800;font-size:12px}
+.rank.r1{background:#B4770F;color:#fff}.rank.r2{background:#7E8C8A;color:#fff}.rank.r3{background:#9A6A3C;color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:14px 0}
+.kpi{background:#fff;border:1px solid var(--line);border-top:3px solid #9DB0AE;border-radius:10px;padding:10px 13px}
+.kpi span{display:block;font-size:11.5px;color:var(--txt2);font-weight:700}
+.kpi b{display:block;font-size:22px;font-variant-numeric:tabular-nums;line-height:1.35}
+.kpi small{font-size:11px;color:var(--txt2)}
+.kpi.k-in{border-top-color:var(--teal)}.kpi.k-out{border-top-color:#1F5FA8}.kpi.k-dmg{border-top-color:var(--red)}.kpi.k-warn{border-top-color:var(--amber)}
+.t-in{background:#E4F1EE;color:#0A5B52}.t-out{background:#E3ECFB;color:#1B4F8C}.t-dmg{background:#FBE7E5;color:var(--red)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:14px;margin-top:14px}
+.two .card+.card{margin-top:0}
+.two+.card{margin-top:14px}
+.note{font-size:11.5px;color:var(--txt2)}
+.bar{height:6px;background:var(--line2);border-radius:4px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:#1F5FA8;border-radius:4px}
+/* ورقة الطباعة */
+#print-zone .pr{color:#111;font-size:10px;line-height:1.5}
+#print-zone .pr-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #0D2026;padding-bottom:7px;margin-bottom:7px}
+#print-zone .pr-brand{font-size:17px;font-weight:800;color:#0D2026}
+#print-zone .pr-sys{font-size:10px;color:#5C7076}
+#print-zone .pr-title{text-align:left}
+#print-zone .pr-title h1{font-size:16px;margin:0;color:#0E6E63}
+#print-zone .pr-title div{font-size:11.5px;font-weight:700}
+#print-zone .pr-meta{display:flex;flex-wrap:wrap;gap:4px 18px;background:#F4F6F5;border:1px solid #DCE4E3;border-radius:6px;padding:6px 10px;margin-bottom:8px}
+#print-zone .pr-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:6px}
+#print-zone .pr-kpis div{border:1px solid #DCE4E3;border-top:3px solid #0E6E63;border-radius:6px;padding:5px 8px}
+#print-zone .pr-kpis span{display:block;font-size:9px;color:#5C7076;font-weight:700}
+#print-zone .pr-kpis b{display:block;font-size:15px}
+#print-zone .pr-kpis small{font-size:8.5px;color:#5C7076}
+#print-zone h3{font-size:12px;margin:12px 0 5px;color:#0D2026;border-inline-start:4px solid #0E6E63;padding-inline-start:7px}
+#print-zone table{width:100%;border-collapse:collapse;font-size:9.5px;page-break-inside:auto}
+#print-zone tr{page-break-inside:avoid}
+#print-zone th{background:#0D2026;color:#fff;font-weight:700;padding:4px 5px;border:1px solid #0D2026;text-align:right}
+#print-zone td{border:1px solid #C9D3D1;padding:3px 5px;text-align:right;white-space:normal}
+#print-zone tbody tr:nth-child(even) td{background:#F7FAF9}
+#print-zone td.num{text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+#print-zone tfoot td{background:#E4F1EE;font-weight:800;border-top:2px solid #0D2026}
+#print-zone .c-red{color:#A8291F;font-weight:700}#print-zone .c-amb{color:#8A5A08;font-weight:700}
+#print-zone .c-grn{color:#0A5B52;font-weight:700}#print-zone .c-blu{color:#1B4F8C;font-weight:700}
+#print-zone .pr-sign{display:flex;justify-content:space-between;gap:30px;margin-top:22px;page-break-inside:avoid;font-size:10.5px;line-height:2.2}
+#print-zone .pr-foot{margin-top:10px;border-top:1px solid #DCE4E3;padding-top:4px;font-size:8.5px;color:#5C7076;text-align:center}
 @media print{
-  .app{display:none!important}#toast{display:none!important}
+  .app,#toast,#settings-modal{display:none!important}
   body{background:#fff}
-  #print-zone{display:block!important}
-  #print-zone table{width:100%;font-size:11px;border-collapse:collapse}
-  #print-zone th,#print-zone td{border:1px solid #bbb;padding:5px;text-align:right}
-  @page{size:A4;margin:12mm}
+  #print-zone{display:block!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4 landscape;margin:9mm}
 }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -147,9 +193,10 @@ const BRANCHES=['الفرع الرئيسي','فرع الرياض'];
 const ACCESS_MAP={
   'algobiry2016@gmail.com':{branch:'all'},
   'dm.flowers11@gmail.com':{branch:'all'},
-  'ahmeddmflowers@gmail.com':{branch:'فرع الرياض'}
+  'ahmeddmflowers@gmail.com':{branch:'فرع الرياض'},
+  'demployee93@gmail.com':{branch:'الفرع الرئيسي'}
 };
-const DEFAULT_BRANCH='الفرع الرئيسي'; // أي بريد غير مذكور أعلاه يُعتبر تلقائيًا موظف الفرع الرئيسي
+const DEFAULT_BRANCH='الفرع الرئيسي'; // فرع الأصناف القديمة اللي ما لها فرع محدد — أي بريد غير مذكور أعلاه ما يدخل النظام
 let RC=[], RMAP={};                   // التوريدات الواردة من المشتريات + ذاكرة ربط أصنافها
 /* حسابات المشتريات فقط — ما تدخل نظام المخزون (حسابها موجود بس عشان إرسال التوريدات) */
 const PURCHASE_ONLY=['ashrfmohamed787@gmail.com'];
@@ -157,7 +204,7 @@ let DB={items:[],moves:[]};           // items: {..., branch}; moves: {id,type:'
 let V='open', F={};
 let noStore=false;
 let CUR_EMAIL=null, CUR_BRANCH=null, CUR_ALL=false, VIEW=null;
-const access=email=>ACCESS_MAP[(email||'').toLowerCase()]||{branch:DEFAULT_BRANCH};
+const access=email=>ACCESS_MAP[(email||'').toLowerCase()]||null;
 /* الأصناف/الحركات المرئية حسب الفرع المختار حاليًا للعرض (VIEW) */
 const visItems=()=>VIEW==='all'?DB.items:DB.items.filter(i=>(i.branch||DEFAULT_BRANCH)===VIEW);
 const activeItems=()=>visItems().filter(i=>!i.archived);
@@ -240,6 +287,20 @@ function bal(id,upto){
     b+= m.type==='in'?n(m.qty):-n(m.qty)});
   return b;
 }
+/* لو الرصيد نزل تحت الصفر بأي يوم: كمية التسوية (أعمق سالب) وأول يوم صار فيه سالب.
+   التسوية بتاريخ أول يوم سالب تخلّي الرصيد صفر أو أكثر بكل الأيام، فحتى تقارير الأشهر الماضية تنضبط */
+function negInfo(id){
+  const dates=[...new Set(DB.moves.filter(m=>m.itemId===id).map(m=>m.date).filter(Boolean))].sort();
+  let min=0,first=null;
+  dates.forEach(d=>{const b=bal(id,d);if(b<min)min=b;if(b<-1e-9&&!first)first=d});
+  return first?{qty:R3(-min),date:first,now:bal(id)}:null;
+}
+const negItems=()=>visItems().map(i=>({i,x:negInfo(i.id)})).filter(r=>r.x);
+/* أقل رصيد من تاريخ معيّن لين اليوم — يُستخدم للتحقق من عمليات الصرف بتاريخ قديم */
+function minBalFrom(id,d){
+  const dates=[...new Set(DB.moves.filter(m=>m.itemId===id&&m.date>d).map(m=>m.date))];
+  return Math.min(bal(id,d),bal(id),...dates.map(x=>bal(id,x)));
+}
 const st=(b,min)=> n(b)<=0?{k:'zero',t:'نفد'} : (n(min)>0&&n(b)<=n(min)?{k:'low',t:'منخفض'}:{k:'ok',t:'متوفر'});
 
 /* تنبيهات واتساب للأصناف اللي وصلت للحد الأدنى */
@@ -251,7 +312,7 @@ const lowMsg=(i,b)=>`⚠️ تنبيه مخزون\nالصنف: ${i.name}\nالم
 const allLowMsg=list=>`⚠️ تنبيه مخزون — أصناف منخفضة (${list.length})\n\n`+list.map(x=>`• ${x.i.name}: متبقي ${fmt(x.b)} ${x.i.unit} (الحد الأدنى ${fmt(x.i.min)})`).join('\n');
 
 /* ---------- التنقل ---------- */
-const TABS=[{id:'open',t:'الرصيد الافتتاحي'},{id:'rcv',t:'توريدات واردة'},{id:'in',t:'الوارد'},{id:'out',t:'المنصرف'},{id:'damage',t:'التالف'},{id:'rep',t:'التقرير الشهري'},{id:'repday',t:'التقرير اليومي'}];
+const TABS=[{id:'open',t:'الرصيد الافتتاحي'},{id:'rcv',t:'توريدات واردة'},{id:'in',t:'الوارد'},{id:'out',t:'المنصرف'},{id:'damage',t:'التالف'},{id:'rep',t:'التقارير'}];
 function go(v){V=v;F={};render();scrollTo(0,0)}
 function render(){
   const a=document.activeElement;
@@ -261,7 +322,7 @@ function render(){
   const pc=pendingRc().length;
   $('#tabs').innerHTML=TABS.map(t=>`<button class="tab ${V===t.id?'on':''}" data-v="${t.id}">${t.t}${t.id==='rcv'&&pc?`<span class="cnt">${pc}</span>`:''}</button>`).join('');
   $('#tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>go(b.dataset.v));
-  $('#view').innerHTML={open:vOpen,rcv:vRcv,in:vMove,out:vMove,damage:vMove,rep:vRep,repday:vRepDay}[V]();
+  $('#view').innerHTML={open:vOpen,rcv:vRcv,in:vMove,out:vMove,damage:vMove,rep:vRep}[V]();
   bind();
   if(keepId){const el=document.getElementById(keepId);
     if(el){el.focus();if(sel){try{el.setSelectionRange(sel[0],sel[1])}catch(e){}}}}
@@ -274,11 +335,25 @@ function vOpen(){
   if(q)list=list.filter(i=>matchName(i.name,q));
   if(F.qcat)list=list.filter(i=>(i.category||'')===F.qcat);
   const low=lowItems();
+  const neg=negItems();
+  const pendFor=i=>pendingRc().filter(r=>(r.branch||DEFAULT_BRANCH)===(i.branch||DEFAULT_BRANCH)&&sameName(r.name,i.name));
   const lowByBranch={};
   low.forEach(x=>{const br=x.i.branch||DEFAULT_BRANCH;(lowByBranch[br]=lowByBranch[br]||[]).push(x)});
   return `
   <div class="pagehead"><h2>الرصيد الافتتاحي</h2>
     <p>أضف أصنافك والكميات الموجودة في المخزن عند البداية. الرصيد الحالي يُحسب تلقائيًا.</p></div>
+
+  ${neg.length?`<div class="card" style="border-color:#E8CFCC">
+    <div class="card-h"><h3 style="color:var(--red)">⛔ أرصدة غير مضبوطة — تحتاج تسوية</h3>
+      ${CUR_ALL?`<button class="btn primary sm" data-a="fixneg">تسوية الكل (${neg.length})</button>`:`<span class="sub">${neg.length} صنف</span>`}</div>
+    <div class="card-b" style="padding-bottom:0"><p class="note" style="margin:0 0 10px">هالأصناف انصرف منها أكثر من المسجّل كوارد بيوم من الأيام — غالبًا فاتورة انحذفت من المشتريات بعد ما انصرف منها. التسوية تضيف وارد «تسوية جرد» بتاريخ أول يوم صار فيه الخلل، فيرجع الرصيد صفر أو أكثر بكل الأيام والتقارير.${CUR_ALL?'':' <b>بلّغ الإدارة لتسويتها.</b>'}</p></div>
+    <div class="tblwrap"><table><thead><tr><th>الصنف</th>${VIEW==='all'?'<th>الفرع</th>':''}<th class="num">الرصيد الحالي</th><th class="num">كمية التسوية</th><th>من تاريخ</th><th>ملاحظة</th></tr></thead>
+    <tbody>${neg.map(r=>{const pr=pendFor(r.i);return `<tr>
+      <td class="wrap"><b>${esc(r.i.name)}</b></td>
+      ${VIEW==='all'?`<td><span class="badge-branch">${esc(r.i.branch||DEFAULT_BRANCH)}</span></td>`:''}
+      <td class="num">${fmt(r.x.now)} ${esc(r.i.unit)}</td><td class="num">+${fmt(r.x.qty)}</td><td>${dH(r.x.date)}</td>
+      <td class="wrap" style="font-size:12.5px">${pr.length?`<button class="btn sm" data-a="gorcv">فيه توريد معلّق بنفس الاسم (${pr.map(q=>fmt(q.qty)+' '+esc(q.unit)).join('، ')}) — أكّده قبل التسوية</button>`:'—'}</td></tr>`}).join('')}</tbody></table></div>
+  </div>`:''}
 
   ${low.length?`<div class="card" style="border-color:#F0C89C">
     <div class="card-h"><h3 style="color:var(--amber)">⚠️ أصناف منخفضة أو نفدت</h3><span class="sub">${low.length} صنف</span></div>
@@ -443,7 +518,7 @@ function vMove(){
         <td class="wrap"><b>${esc(i.name)}</b></td><td style="color:var(--txt2)">${esc(i.category)||'—'}</td><td class="num">${fmt(m.qty)}</td><td>${esc(i.unit)}</td>
         <td class="wrap" style="color:var(--txt2)">${esc(m.notes)||'—'}</td>
         <td style="font-size:11.5px;color:var(--txt2)">${esc(m.by)||'—'}</td>
-        <td><button class="btn ghost sm" data-a="delmove" data-id="${m.id}">حذف</button></td></tr>`}).join('')}</tbody>
+        <td>${CUR_ALL?`<button class="btn ghost sm" data-a="delmove" data-id="${m.id}">حذف</button>`:''}</td></tr>`}).join('')}</tbody>
       <tfoot><tr><td colspan="5">الإجمالي (كل النتائج)</td><td class="num">${fmt(total)}</td><td colspan="4"></td></tr></tfoot></table>`
     :`<div class="empty"><strong>لا توجد عمليات</strong>سجّل أول عملية من النموذج بالأعلى.</div>`}
     </div>
@@ -455,202 +530,421 @@ function vMove(){
   </div>`;
 }
 
-/* ---------- 5) التقرير الشهري ---------- */
+/* ---------- 5) التقارير (يومي / شهري / فترة محددة) ---------- */
+/* ثلاث تقارير: الملخص الشامل، الأصناف الأكثر استهلاكًا، التصنيفات.
+   مصدر واحد للبيانات يغذي الشاشة والطباعة والإكسل، عشان الأرقام تطلع نفسها في الثلاثة */
+const TYPE_T={in:'الوارد',out:'المنصرف',damage:'التالف'};
+const TYPE_C={in:'t-in',out:'t-out',damage:'t-dmg'};
+const PTYPES=[['all','كل الحركات'],['out','المنصرف'],['in','الوارد'],['damage','التالف']];
+const RVIEWS=[['sum','الملخص الشامل','تقرير حركة المخزون'],['top','الأكثر استهلاكًا','تقرير الأصناف الأكثر استهلاكًا'],['cat','التصنيفات','تقرير التصنيفات']];
+const MV_LIMIT=150;
+/* حساب اليوم السابق بالـ UTC — الحساب بالتوقيت المحلي كان يرجّع يومين ورا في السعودية */
+const dayBefore=d=>{const dt=new Date(d+'T00:00:00Z');dt.setUTCDate(dt.getUTCDate()-1);return dt.toISOString().slice(0,10)};
+const monthEnd=v=>{const[y,m]=v.split('-').map(Number);return new Date(Date.UTC(y,m,0)).toISOString().slice(0,10)};
+const daysBetween=(a,b)=>Math.round((Date.parse(b+'T00:00:00Z')-Date.parse(a+'T00:00:00Z'))/864e5)+1;
+const branchOf=i=>(i&&i.branch)||DEFAULT_BRANCH;
+const byName=s=>(s||'').split('@')[0]||'—';
+/* الكميات تُجمع لكل وحدة على حدة ("26 حبة + 85 متر") بدل جمع حبة مع متر */
+const unitAdd=(g,u,v)=>{if(n(v)){u=u||'—';g[u]=(g[u]||0)+n(v)}return g};
+const unitTxt=g=>Object.entries(g).filter(([,v])=>v).sort((a,b)=>b[1]-a[1]).map(([u,v])=>`${fmt(v)} ${u}`).join(' + ')||'0';
+const coverTxt=c=>c==null?'—':c>=365?'أكثر من سنة':`${Math.floor(c)} يوم`;
+const coverC=c=>c==null?'':c<7?'zero':c<15?'low':'ok';
+const pct=v=>`${(Math.round(v*10)/10).toLocaleString('en-US')}%`;
+
+function repPeriod(){
+  const mode=F.pmode||'month';
+  let P;
+  if(mode==='day'){const d=F.day||today();P={mode,from:d,to:d,label:`يوم ${dH(d)}`}}
+  else if(mode==='range'){
+    let from=F.pfrom||ym(today())+'-01', to=F.pto||today();
+    if(from>to)[from,to]=[to,from];
+    P={mode,from,to,label:`الفترة من ${dH(from)} إلى ${dH(to)}`};
+  }else{const cur=F.ym||ym(today());P={mode:'month',ym:cur,from:cur+'-01',to:monthEnd(cur),label:`شهر ${mName(cur)}`}}
+  /* أيام الفترة الفعلية (لو الفترة فيها أيام جاية، نحسب لين اليوم) — للمتوسط اليومي */
+  P.days=Math.max(1,daysBetween(P.from,P.to<today()?P.to:today()));
+  return P;
+}
+
+function repCompute(forceType){
+  const P=repPeriod(), type=forceType||F.ptype||'all', cat=F.rcat||'', q=(F.repq||'').trim();
+  const items=visItems().filter(i=>(!cat||(i.category||'')===cat)&&(!q||matchName(i.name,q)));
+  const ids=new Set(items.map(i=>i.id)), byItem={};
+  DB.moves.forEach(m=>{if(ids.has(m.itemId)&&m.date>=P.from&&m.date<=P.to)(byItem[m.itemId]=byItem[m.itemId]||[]).push(m)});
+  const sum=(mv,t)=>mv.reduce((a,m)=>a+(m.type===t?n(m.qty):0),0);
+  const cnt=(mv,t)=>mv.filter(m=>m.type===t).length;
+  const prev=dayBefore(P.from);
+  let rows=items.map(i=>{
+    const mv=(byItem[i.id]||[]).sort((a,b)=>a.date.localeCompare(b.date));
+    const inQ=sum(mv,'in'),outQ=sum(mv,'out'),dmQ=sum(mv,'damage');
+    const open=bal(i.id,prev), close=open+inQ-outQ-dmQ;
+    const det=type==='all'?mv:mv.filter(m=>m.type===type);
+    return {i,mv,det,inQ,outQ,dmQ,open,close,cnt:det.length,outN:cnt(mv,'out'),s:st(close,i.min)};
+  }).filter(r=>r.det.length||(F.ridle&&!r.i.archived));
+  const key=r=>type==='all'?r.inQ+r.outQ+r.dmQ:{in:r.inQ,out:r.outQ,damage:r.dmQ}[type];
+  rows.sort((a,b)=>key(b)-key(a)||a.i.name.localeCompare(b.i.name,'ar'));
+
+  const moves=rows.flatMap(r=>r.det).sort((a,b)=>a.date.localeCompare(b.date));
+  const add=f=>rows.reduce((a,r)=>a+f(r),0);
+  const tot={open:add(r=>r.open),inQ:add(r=>r.inQ),outQ:add(r=>r.outQ),dmQ:add(r=>r.dmQ),close:add(r=>r.close),
+    inN:add(r=>cnt(r.mv,'in')),outN:add(r=>r.outN),dmN:add(r=>cnt(r.mv,'damage')),cnt:moves.length,
+    moved:rows.filter(r=>r.det.length).length,warn:rows.filter(r=>!r.i.archived&&r.s.k!=='ok').length};
+
+  const cats={};
+  rows.forEach(r=>{const c=r.i.category||'بدون تصنيف';
+    const x=cats[c]=cats[c]||{cat:c,rows:[],items:0,moved:0,inQ:0,outQ:0,dmQ:0,cnt:0,inU:{},outU:{},dmU:{},openU:{},closeU:{}};
+    x.rows.push(r);x.items++;if(r.det.length)x.moved++;
+    x.inQ+=r.inQ;x.outQ+=r.outQ;x.dmQ+=r.dmQ;x.cnt+=r.cnt;
+    unitAdd(x.inU,r.i.unit,r.inQ);unitAdd(x.outU,r.i.unit,r.outQ);unitAdd(x.dmU,r.i.unit,r.dmQ);
+    unitAdd(x.openU,r.i.unit,r.open);unitAdd(x.closeU,r.i.unit,r.close)});
+  const catRows=Object.values(cats).sort((a,b)=>b.cnt-a.cnt||b.outQ-a.outQ||a.cat.localeCompare(b.cat,'ar'));
+  catRows.forEach(c=>{c.share=tot.cnt?c.cnt/tot.cnt*100:0;
+    c.topItem=c.rows.filter(r=>r.outQ>0).sort((a,b)=>b.outQ-a.outQ)[0]||null;
+    c.warn=c.rows.filter(r=>!r.i.archived&&r.s.k!=='ok').length});
+  const top=rows.filter(r=>r.outQ>0).sort((a,b)=>b.outQ-a.outQ).slice(0,5);
+
+  return {P,type,cat,q,rows,moves,catRows,top,tot,
+    typeLabel:PTYPES.find(x=>x[0]===type)[1],branchLabel:VIEW==='all'?'كل الفروع':VIEW};
+}
+
+/* تقرير الاستهلاك: ترتيب كل صنف انصرف + المتوسط اليومي وكم يكفي الرصيد + جهات الصرف */
+function repTop(R){
+  const days=R.P.days, unitTot={};
+  R.rows.forEach(r=>unitAdd(unitTot,r.i.unit,r.outQ));
+  const by=F.tsort==='times'?(a,b)=>b.outN-a.outN||b.outQ-a.outQ:(a,b)=>b.outQ-a.outQ||b.outN-a.outN;
+  const list=R.rows.filter(r=>r.outQ>0).sort(by).map(r=>{
+    const outs=r.mv.filter(m=>m.type==='out'), pm={};
+    outs.forEach(m=>{const p=(m.party||'').trim()||'غير محدد';pm[p]=(pm[p]||0)+n(m.qty)});
+    const parties=Object.entries(pm).sort((a,b)=>b[1]-a[1]);
+    const avg=r.outQ/days, now=bal(r.i.id);
+    return Object.assign({},r,{outs,parties,avg,now,share:unitTot[r.i.unit]?r.outQ/unitTot[r.i.unit]*100:0,
+      cover:avg>0?Math.max(0,now)/avg:null,last:outs.length?outs[outs.length-1].date:''});
+  });
+  const P2={};
+  list.forEach(r=>r.outs.forEach(m=>{const p=(m.party||'').trim()||'غير محدد';
+    const x=P2[p]=P2[p]||{party:p,n:0,u:{},items:{}};
+    x.n++;unitAdd(x.u,r.i.unit,m.qty);x.items[r.i.name]=(x.items[r.i.name]||0)+n(m.qty)}));
+  const totN=list.reduce((a,r)=>a+r.outN,0);
+  const parties=Object.values(P2).sort((a,b)=>b.n-a.n).map(x=>{
+    const ti=Object.entries(x.items).sort((a,b)=>b[1]-a[1])[0];
+    return Object.assign(x,{share:totN?x.n/totN*100:0,itemsN:Object.keys(x.items).length,topItem:ti?ti[0]:'—'})});
+  return {days,list,parties,totN,unitTot,soon:list.filter(r=>r.cover!=null&&r.cover<7).length};
+}
+
+const repView=()=>F.rview||'sum';
+function repData(){
+  const v=repView(), R=repCompute(v==='top'?'all':undefined);
+  return {v,R,T:v==='top'?repTop(R):null};
+}
+
+/* بطاقات الملخص — نفسها في الشاشة والطباعة والإكسل */
+function repKpis(D){
+  const {v,R,T}=D,{tot}=R;
+  if(v==='top')return [
+    {l:'أصناف انصرفت',v:T.list.length,s:`من ${R.rows.length} صنف تحرّك`,c:'k-out'},
+    {l:'مرات الصرف',v:T.totN,s:`خلال ${T.days} يوم`,c:'k-out'},
+    {l:'متوسط عمليات الصرف يوميًا',v:fmt(Math.round(T.totN/T.days*10)/10),s:'عملية / يوم'},
+    {l:'أكثر جهة صرف',v:T.parties[0]?T.parties[0].party:'—',s:T.parties[0]?`${T.parties[0].n} عملية · ${pct(T.parties[0].share)}`:''},
+    {l:'إجمالي التالف',v:fmt(tot.dmQ),s:`${tot.dmN} عملية`,c:'k-dmg'},
+    {l:'أصناف تخلص خلال أسبوع',v:T.soon,s:'حسب متوسط الصرف',c:'k-warn'}];
+  if(v==='cat'){const c0=R.catRows[0];return [
+    {l:'التصنيفات',v:R.catRows.length,s:`${R.rows.length} صنف`},
+    {l:'أكثر تصنيف حركة',v:c0?c0.cat:'—',s:c0?`${c0.cnt} عملية · ${pct(c0.share)}`:'',c:'k-in'},
+    {l:'العمليات',v:tot.cnt,s:R.typeLabel},
+    {l:'عمليات الصرف',v:tot.outN,s:`${tot.inN} وارد · ${tot.dmN} تالف`,c:'k-out'},
+    {l:'أصناف تحرّكت',v:tot.moved,s:`من ${R.rows.length}`},
+    {l:'تحتاج متابعة',v:tot.warn,s:'منخفض أو نفد آخر المدة',c:'k-warn'}]}
+  return [
+    {l:'إجمالي الوارد',v:fmt(tot.inQ),s:`${tot.inN} عملية`,c:'k-in'},
+    {l:'إجمالي المنصرف',v:fmt(tot.outQ),s:`${tot.outN} عملية`,c:'k-out'},
+    {l:'إجمالي التالف',v:fmt(tot.dmQ),s:`${tot.dmN} عملية`,c:'k-dmg'},
+    {l:'العمليات المعروضة',v:tot.cnt,s:R.typeLabel},
+    {l:'أصناف تحرّكت',v:tot.moved,s:`من ${R.rows.length} صنف في التقرير`},
+    {l:'تحتاج متابعة',v:tot.warn,s:'منخفض أو نفد آخر المدة',c:'k-warn'}];
+}
+
+/* جداول الطباعة والإكسل — الأرقام تبقى أرقام (عشان الإكسل يقدر يجمعها) والنصوص نصوص */
+function repSheets(D){
+  const all=VIEW==='all',{v,R,T}=D,{rows,moves,catRows,tot}=R;
+  const B=all?['الفرع']:[], b=i=>all?[branchOf(i)]:[], e=all?['']:[];
+  const itemRow=(r,k,withCat)=>[k+1,r.i.name,...(withCat?[r.i.category||'—']:[]),...b(r.i),r.i.unit,r.open,r.inQ,r.outQ,r.dmQ,r.close,n(r.i.min),r.i.archived?'مؤرشف':r.s.t,r.cnt];
+  const log={title:'سجل العمليات التفصيلي',
+    head:['م','التاريخ','النوع','رقم العملية','الجهة / السبب','الصنف',...B,'الكمية','الوحدة','ملاحظات','أضافها','المصدر'],
+    body:moves.map((m,k)=>{const i=it(m.itemId)||{};return [k+1,dH(m.date),TYPE_T[m.type]||m.type,m.no||'—',m.party||'—',i.name||'—',...b(i),n(m.qty),i.unit||'',m.notes||'—',byName(m.by),m.receiptId?'توريد مشتريات':'يدوي']}),foot:null};
+  if(v==='top')return [
+    {title:'ترتيب الأصناف الأكثر استهلاكًا',
+     head:['الترتيب','الصنف','التصنيف',...B,'الوحدة','المنصرف','مرات الصرف','الحصة من وحدته','المتوسط اليومي','التالف','الرصيد الحالي','يكفي تقريبًا','أكثر جهة صرف','آخر صرف'],
+     body:T.list.map((r,k)=>[k+1,r.i.name,r.i.category||'—',...b(r.i),r.i.unit,r.outQ,r.outN,pct(r.share),Math.round(r.avg*100)/100,r.dmQ,r.now,coverTxt(r.cover),r.parties[0]?`${r.parties[0][0]} (${fmt(r.parties[0][1])})`:'—',dH(r.last)]),
+     foot:null},
+    {title:'الصرف حسب الجهة',
+     head:['الجهة','مرات الصرف','النسبة من العمليات','الكميات','عدد الأصناف','أكثر صنف'],
+     body:T.parties.map(x=>[x.party,x.n,pct(x.share),unitTxt(x.u),x.itemsN,x.topItem]),foot:null},
+    {title:'تفصيل الصرف لكل صنف حسب الجهة',
+     head:['الصنف',...B,'الجهة','الكمية','الوحدة','النسبة من منصرف الصنف'],
+     body:T.list.flatMap(r=>r.parties.map(([p,q])=>[r.i.name,...b(r.i),p,q,r.i.unit,pct(q/r.outQ*100)])),foot:null}];
+  if(v==='cat')return [
+    {title:'ملخص التصنيفات',
+     head:['التصنيف','عدد الأصناف','تحرّك منها','العمليات','النسبة من العمليات','الوارد','المنصرف','التالف','تحتاج متابعة','أكثر صنف صرفًا'],
+     body:catRows.map(c=>[c.cat,c.items,c.moved,c.cnt,pct(c.share),unitTxt(c.inU),unitTxt(c.outU),unitTxt(c.dmU),c.warn,c.topItem?`${c.topItem.i.name} (${fmt(c.topItem.outQ)} ${c.topItem.i.unit})`:'—']),
+     foot:['الإجمالي',rows.length,tot.moved,tot.cnt,tot.cnt?'100%':'0%','','','',tot.warn,'']},
+    ...catRows.map(c=>({title:`تصنيف: ${c.cat} — ${c.items} صنف · ${c.cnt} عملية`,
+     head:['م','الصنف',...B,'الوحدة','رصيد أول المدة','الوارد','المنصرف','التالف','رصيد آخر المدة','الحد الأدنى','الحالة','العمليات'],
+     body:c.rows.map((r,k)=>itemRow(r,k,false)),
+     foot:['المجموع','',...e,'',unitTxt(c.openU),unitTxt(c.inU),unitTxt(c.outU),unitTxt(c.dmU),unitTxt(c.closeU),'','',c.cnt]}))];
+  return [
+    {title:'ملخص الأصناف',
+     head:['م','الصنف','التصنيف',...B,'الوحدة','رصيد أول المدة','الوارد','المنصرف','التالف','رصيد آخر المدة','الحد الأدنى','الحالة','عدد العمليات'],
+     body:rows.map((r,k)=>itemRow(r,k,true)),
+     foot:['الإجمالي','','',...e,'',tot.open,tot.inQ,tot.outQ,tot.dmQ,tot.close,'','',tot.cnt]},
+    {title:'ملخص حسب التصنيف',
+     head:['التصنيف','عدد الأصناف','الوارد','المنصرف','التالف','عدد العمليات'],
+     body:catRows.map(c=>[c.cat,c.items,unitTxt(c.inU),unitTxt(c.outU),unitTxt(c.dmU),c.cnt]),
+     foot:['الإجمالي',rows.length,'','','',tot.cnt]},
+    log];
+}
+
+/* ---------- عرض التقارير على الشاشة ---------- */
+const zN=v=>n(v)?fmt(v):'<span style="color:#B5C2C0">0</span>';
+const typeTag=t=>`<span class="tag ${TYPE_C[t]||''}">${TYPE_T[t]||esc(t)}</span>`;
+const brCell=i=>VIEW==='all'?`<td><span class="badge-branch" style="margin:0">${esc(branchOf(i))}</span></td>`:'';
+const brTh=()=>VIEW==='all'?'<th>الفرع</th>':'';
+const stCell=r=>r.i.archived?'<span class="tag zero">مؤرشف</span>':`<span class="tag ${r.s.k}">${r.s.t}</span>`;
+const movesTbl=list=>`<table style="margin:0"><thead><tr><th>التاريخ</th><th>النوع</th><th>رقم العملية</th><th>الجهة / السبب</th><th class="num">الكمية</th><th>ملاحظات</th><th>أضافها</th></tr></thead>
+  <tbody>${list.map(m=>`<tr><td>${dH(m.date)}</td><td>${typeTag(m.type)}</td><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
+    <td class="num">${fmt(m.qty)}</td><td class="wrap">${esc(m.notes)||'—'}</td><td>${esc(byName(m.by))}</td></tr>`).join('')}</tbody></table>`;
+
 function vRep(){
-  const months=Array.from(new Set(visMoves().map(m=>ym(m.date)))).filter(Boolean).sort().reverse();
-  if(!months.length)months.push(ym(today()));
-  const cur=F.ym||months[0];
-  const type=F.type||'out';
-  const prev=cur+'-00';
-
-  const rows=visItems().filter(i=>!F.rcat||(i.category||'')===F.rcat).map(i=>{
-    const mv=DB.moves.filter(m=>m.itemId===i.id&&ym(m.date)===cur);
-    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
-    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
-    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
-    const cnt=mv.filter(m=>m.type===type).length;
-    const open=bal(i.id,prev);
-    return {i,inQ,outQ,dmQ,cnt,open,close:open+inQ-outQ-dmQ,det:mv.filter(m=>m.type===type).sort((a,b)=>a.date.localeCompare(b.date))};
-  }).filter(r=>({in:r.inQ,out:r.outQ,damage:r.dmQ}[type])>0)
-    .sort((a,b)=>({in:b.inQ-a.inQ,out:b.outQ-a.outQ,damage:b.dmQ-a.dmQ})[type]);
-
-  const tot=rows.reduce((a,r)=>a+({in:r.inQ,out:r.outQ,damage:r.dmQ}[type]),0);
-  const totC=rows.reduce((a,r)=>a+r.cnt,0);
-  const partyLabel=type==='in'?'المورد':(type==='out'?'العميل / الجهة':'سبب التلف');
-  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
-  const em=t=>t===type?' style="font-size:15px;font-weight:800"':'';
-
+  const D=repData(),{v,R}=D,{P,type}=R;
+  const months=[...new Set([ym(today()),...visMoves().map(m=>ym(m.date))])].filter(Boolean).sort().reverse();
+  const viewInfo=RVIEWS.find(x=>x[0]===v);
   return `
-  <div class="pagehead"><h2>التقرير الشهري</h2><p>اختر الشهر لعرض كل صنف تحرّك خلاله وتفاصيل عملياته.</p></div>
+  <div class="pagehead"><h2>التقارير</h2><p>تقارير مفصّلة لحركة المخزون: ملخص شامل، الأصناف الأكثر استهلاكًا، والتصنيفات.</p></div>
 
-  <div class="card"><div class="card-b"><div class="grid g2">
-    <label class="f"><span>الشهر</span><select data-f="ym">${months.map(m=>`<option value="${m}" ${m===cur?'selected':''}>${mName(m)}</option>`).join('')}</select></label>
-    <label class="f"><span>نوع الحركة</span><select data-f="type">
-      <option value="out" ${type==='out'?'selected':''}>المنصرف</option>
-      <option value="in" ${type==='in'?'selected':''}>الوارد</option>
-      <option value="damage" ${type==='damage'?'selected':''}>التالف</option></select></label>
-    <label class="f"><span>التصنيف</span><select data-f="rcat"><option value="">كل التصنيفات</option>
-      ${allCats().map(c=>`<option value="${esc(c)}" ${F.rcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
-  </div>
-  <div class="btnrow" style="margin-top:12px">
-    <button class="btn" data-a="print">طباعة / PDF</button>
-    <button class="btn" data-a="excel">تصدير Excel</button>
-  </div></div></div>
+  <div class="seg seg-lg">${RVIEWS.map(([k,t])=>`<button class="${v===k?'on':''}" data-a="rview" data-v="${k}">${t}</button>`).join('')}</div>
 
+  <div class="card"><div class="card-b">
+    <div class="seg">${[['day','يومي'],['month','شهري'],['range','فترة محددة']].map(([k,t])=>`<button class="${P.mode===k?'on':''}" data-a="pmode" data-v="${k}">${t}</button>`).join('')}</div>
+    <div class="grid g2">
+      ${P.mode==='day'?`<label class="f"><span>اليوم</span><input type="date" data-f="day" value="${esc(P.from)}"></label>`
+      :P.mode==='range'?`<label class="f"><span>من تاريخ</span><input type="date" data-f="pfrom" value="${esc(P.from)}"></label>
+        <label class="f"><span>إلى تاريخ</span><input type="date" data-f="pto" value="${esc(P.to)}"></label>`
+      :`<label class="f"><span>الشهر</span><select data-f="ym">${months.map(m=>`<option value="${m}" ${m===P.ym?'selected':''}>${mName(m)}</option>`).join('')}</select></label>`}
+      ${v==='top'?`<label class="f"><span>الترتيب حسب</span><select data-f="tsort">
+          <option value="qty" ${F.tsort!=='times'?'selected':''}>الكمية المنصرفة</option>
+          <option value="times" ${F.tsort==='times'?'selected':''}>عدد مرات الصرف</option></select></label>`
+      :`<label class="f"><span>نوع الحركة</span><select data-f="ptype">${PTYPES.map(([k,t])=>`<option value="${k}" ${type===k?'selected':''}>${t}</option>`).join('')}</select></label>`}
+      <label class="f"><span>التصنيف</span><select data-f="rcat"><option value="">كل التصنيفات</option>
+        ${allCats().map(c=>`<option value="${esc(c)}" ${F.rcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
+      <label class="f"><span>بحث عن صنف</span><input id="rep-q" data-f="repq" data-live="1" autocomplete="off" value="${esc(F.repq||'')}" placeholder="اكتب جزءًا من الاسم..."></label>
+    </div>
+    <div class="btnrow" style="margin-top:12px;align-items:center">
+      <button class="btn primary" data-a="repprint">طباعة / PDF</button>
+      <button class="btn" data-a="repexcel">تصدير Excel</button>
+      ${v!=='top'?`<button class="btn ghost sm" data-a="ridle">${F.ridle?'إخفاء الأصناف بدون حركة':'إظهار كل الأصناف (حتى بدون حركة)'}</button>`:''}
+    </div>
+  </div></div>
+
+  <div class="kpis">${repKpis(D).map(k=>`<div class="kpi ${k.c||''}"><span>${esc(k.l)}</span><b>${esc(k.v)}</b><small>${esc(k.s)}</small></div>`).join('')}</div>
+  <p class="note" style="margin:-4px 0 14px">${esc(viewInfo[2])} · ${esc(P.label)} (${P.days} يوم) · ${esc(R.branchLabel)}${R.cat?` · ${esc(R.cat)}`:''}</p>
+
+  ${v==='top'?repTopBody(D):v==='cat'?repCatBody(D):repSumBody(D)}`;
+}
+
+function repSumBody(D){
+  const {R}=D,{P,type,rows,moves,catRows,top,tot}=R;
+  const all=VIEW==='all', cols=all?13:12;
+  const em=t=>t===type?' style="font-weight:800;background:#F3F8F7"':'';
+  const mvShown=F.mvall?moves:moves.slice(0,MV_LIMIT);
+  const maxTop=top.length?top[0].outQ:1;
+  return `
   <div class="card">
-    <div class="card-h"><h3>${typeTitle} — ${mName(cur)}</h3>
-      <span class="sub">${rows.length} صنف · إجمالي الكمية ${fmt(tot)}</span></div>
+    <div class="card-h"><h3>ملخص الأصناف</h3><span class="sub">${rows.length} صنف · ${esc(P.label)}</span></div>
     <div class="tblwrap">
     ${rows.length?`<table><thead><tr>
-      <th>اسم الصنف</th><th>التصنيف</th><th>الوحدة</th><th class="num">رصيد أول الشهر</th><th class="num">الوارد</th>
-      <th class="num">المنصرف</th><th class="num">التالف</th><th class="num">عدد المرات</th><th class="num">رصيد آخر الشهر</th><th></th></tr></thead>
+      <th>م</th><th>الصنف</th><th>التصنيف</th>${brTh()}<th>الوحدة</th>
+      <th class="num">رصيد أول المدة</th><th class="num">الوارد</th><th class="num">المنصرف</th><th class="num">التالف</th>
+      <th class="num">رصيد آخر المدة</th><th>الحالة</th><th class="num">العمليات</th><th></th></tr></thead>
       <tbody>${rows.map((r,k)=>`
-        <tr><td class="wrap"><b>${esc(r.i.name)}</b></td><td style="color:var(--txt2)">${esc(r.i.category)||'—'}</td><td>${esc(r.i.unit)}</td>
-          <td class="num">${fmt(r.open)}</td><td class="num"${em('in')}>${fmt(r.inQ)}</td>
-          <td class="num"${em('out')}>${fmt(r.outQ)}</td><td class="num"${em('damage')}>${fmt(r.dmQ)}</td>
-          <td class="num">${fmt(r.cnt)}</td><td class="num">${fmt(r.close)}</td>
-          <td><button class="btn ghost sm" data-a="toggle" data-k="${k}">${F.open===k?'إخفاء':'التفاصيل'}</button></td></tr>
-        ${F.open===k?`<tr class="detail"><td colspan="10">
-          <table style="margin:0"><thead><tr><th>التاريخ</th><th>رقم العملية</th><th>${partyLabel}</th><th class="num">الكمية</th><th>ملاحظات</th></tr></thead>
-          <tbody>${r.det.map(m=>`<tr><td>${dH(m.date)}</td><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
-            <td class="num">${fmt(m.qty)}</td><td class="wrap">${esc(m.notes)||'—'}</td></tr>`).join('')}</tbody></table>
-        </td></tr>`:''}`).join('')}</tbody>
-      <tfoot><tr><td colspan="4">الإجمالي</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.inQ,0))}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.outQ,0))}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.dmQ,0))}</td>
-        <td class="num">${fmt(totC)}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.close,0))}</td><td></td></tr></tfoot></table>`
-    :`<div class="empty"><strong>لا توجد حركة في ${mName(cur)}</strong>اختر شهرًا آخر أو سجّل عملية جديدة.</div>`}
+        <tr><td style="color:var(--txt2)">${k+1}</td>
+          <td class="wrap"><b>${esc(r.i.name)}</b></td><td style="color:var(--txt2)">${esc(r.i.category)||'—'}</td>${brCell(r.i)}
+          <td>${esc(r.i.unit)}</td>
+          <td class="num">${fmt(r.open)}</td><td class="num"${em('in')}>${zN(r.inQ)}</td>
+          <td class="num"${em('out')}>${zN(r.outQ)}</td><td class="num"${em('damage')}>${zN(r.dmQ)}</td>
+          <td class="num" style="font-size:14.5px">${fmt(r.close)}</td><td>${stCell(r)}</td>
+          <td class="num">${r.cnt}</td>
+          <td>${r.det.length?`<button class="btn ghost sm" data-a="toggle" data-k="${k}">${F.open===k?'إخفاء':'التفاصيل'}</button>`:''}</td></tr>
+        ${F.open===k?`<tr class="detail"><td colspan="${cols}">${movesTbl(r.det)}</td></tr>`:''}`).join('')}</tbody>
+      <tfoot><tr><td colspan="${all?5:4}">الإجمالي</td>
+        <td class="num">${fmt(tot.open)}</td><td class="num">${fmt(tot.inQ)}</td><td class="num">${fmt(tot.outQ)}</td>
+        <td class="num">${fmt(tot.dmQ)}</td><td class="num">${fmt(tot.close)}</td><td></td><td class="num">${tot.cnt}</td><td></td></tr></tfoot></table>`
+    :`<div class="empty"><strong>لا توجد حركة في ${esc(P.label)}</strong>غيّر الفترة أو الفلاتر، أو اضغط «إظهار كل الأصناف» لعرض الأرصدة.</div>`}
     </div>
+  </div>
+
+  ${rows.length?`<div class="two">
+    <div class="card">
+      <div class="card-h"><h3>حسب التصنيف</h3><button class="btn ghost sm" data-a="rview" data-v="cat">تقرير التصنيفات المفصّل ←</button></div>
+      <div class="tblwrap"><table><thead><tr><th>التصنيف</th><th class="num">الأصناف</th><th>المنصرف</th><th class="num">العمليات</th></tr></thead>
+        <tbody>${catRows.map(c=>`<tr><td><b>${esc(c.cat)}</b></td><td class="num">${c.items}</td><td>${esc(unitTxt(c.outU))}</td><td class="num">${c.cnt}</td></tr>`).join('')}</tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h3>الأكثر صرفًا</h3><button class="btn ghost sm" data-a="rview" data-v="top">التقرير المفصّل ←</button></div>
+      <div class="card-b">${top.length?top.map((r,k)=>`<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;gap:8px;font-size:13px"><span><b>${k+1}.</b> ${esc(r.i.name)}</span><span class="num" style="font-weight:700">${fmt(r.outQ)} ${esc(r.i.unit)}</span></div>
+        <div class="bar"><i style="width:${Math.max(3,Math.round(r.outQ/maxTop*100))}%"></i></div></div>`).join('')
+        :'<div class="note">لا يوجد منصرف في هذه الفترة.</div>'}</div>
+    </div>
+  </div>`:''}
+
+  ${moves.length?`<div class="card">
+    <div class="card-h"><h3>سجل العمليات التفصيلي</h3><span class="sub">${moves.length} عملية · ${esc(R.typeLabel)}</span></div>
+    <div class="tblwrap"><table><thead><tr><th>م</th><th>التاريخ</th><th>النوع</th><th>رقم العملية</th><th>الجهة / السبب</th><th>الصنف</th>${brTh()}
+      <th class="num">الكمية</th><th>الوحدة</th><th>ملاحظات</th><th>أضافها</th></tr></thead>
+      <tbody>${mvShown.map((m,k)=>{const i=it(m.itemId)||{};return `<tr>
+        <td style="color:var(--txt2)">${k+1}</td><td>${dH(m.date)}</td><td>${typeTag(m.type)}</td>
+        <td>${esc(m.no)||'—'}${m.receiptId?' <span class="tag ok" style="font-size:10.5px">مشتريات</span>':''}</td>
+        <td class="wrap">${esc(m.party)||'—'}</td><td class="wrap"><b>${esc(i.name)}</b></td>${brCell(i)}
+        <td class="num">${fmt(m.qty)}</td><td>${esc(i.unit)}</td>
+        <td class="wrap" style="color:var(--txt2)">${esc(m.notes)||'—'}</td><td style="font-size:11.5px;color:var(--txt2)">${esc(byName(m.by))}</td></tr>`}).join('')}</tbody></table></div>
+    ${moves.length>MV_LIMIT?`<div class="card-b" style="border-top:1px solid var(--line2)">
+      <button class="btn sm" data-a="mvall">${F.mvall?'عرض أول '+MV_LIMIT+' فقط':'عرض كل العمليات ('+moves.length+')'}</button>
+      <span class="note" style="margin-inline-start:8px">الطباعة والإكسل يشملون كل العمليات دائمًا.</span></div>`:''}
+  </div>`:''}`;
+}
+
+function repTopBody(D){
+  const {R,T}=D,{P}=R, all=VIEW==='all', cols=all?15:14;
+  if(!T.list.length)return `<div class="card"><div class="empty"><strong>لا يوجد منصرف في ${esc(P.label)}</strong>غيّر الفترة أو الفلاتر.</div></div>`;
+  const maxQ=Math.max(...T.list.map(r=>r.outQ));
+  return `
+  <div class="card">
+    <div class="card-h"><h3>ترتيب الأصناف الأكثر استهلاكًا</h3><span class="sub">${T.list.length} صنف · مرتّبة حسب ${F.tsort==='times'?'عدد مرات الصرف':'الكمية'}</span></div>
+    <div class="tblwrap"><table><thead><tr>
+      <th>#</th><th>الصنف</th><th>التصنيف</th>${brTh()}<th class="num">المنصرف</th><th class="num">مرات الصرف</th><th style="min-width:110px">الحصة من وحدته</th>
+      <th class="num">المتوسط اليومي</th><th class="num">التالف</th><th class="num">الرصيد الحالي</th><th>يكفي تقريبًا</th><th>أكثر جهة صرف</th><th>آخر صرف</th><th></th></tr></thead>
+      <tbody>${T.list.map((r,k)=>`
+        <tr><td><span class="rank${k<3?' r'+(k+1):''}">${k+1}</span></td>
+          <td class="wrap"><b>${esc(r.i.name)}</b></td><td style="color:var(--txt2)">${esc(r.i.category)||'—'}</td>${brCell(r.i)}
+          <td class="num" style="font-size:14.5px">${fmt(r.outQ)} <small style="color:var(--txt2);font-weight:500">${esc(r.i.unit)}</small></td>
+          <td class="num">${r.outN}</td>
+          <td><div style="font-size:12px;font-weight:700">${pct(r.share)} <span style="color:var(--txt2);font-weight:500">من منصرف «${esc(r.i.unit)}»</span></div>
+            <div class="bar"><i style="width:${Math.max(3,Math.round(r.outQ/maxQ*100))}%"></i></div></td>
+          <td class="num">${fmt(Math.round(r.avg*100)/100)}</td><td class="num">${zN(r.dmQ)}</td>
+          <td class="num">${fmt(r.now)}</td>
+          <td><span class="tag ${coverC(r.cover)}">${coverTxt(r.cover)}</span></td>
+          <td class="wrap">${r.parties[0]?`${esc(r.parties[0][0])} <span style="color:var(--txt2)">(${fmt(r.parties[0][1])})</span>`:'—'}</td>
+          <td>${dH(r.last)}</td>
+          <td><button class="btn ghost sm" data-a="toggle" data-k="${k}">${F.open===k?'إخفاء':'التفاصيل'}</button></td></tr>
+        ${F.open===k?`<tr class="detail"><td colspan="${cols}">
+          <div style="font-weight:700;color:var(--txt);margin:2px 0 6px">توزيع الصرف حسب الجهة</div>
+          <table style="margin:0 0 10px"><thead><tr><th>الجهة</th><th class="num">الكمية</th><th style="min-width:160px">النسبة</th></tr></thead>
+          <tbody>${r.parties.map(([p,q])=>`<tr><td>${esc(p)}</td><td class="num">${fmt(q)} ${esc(r.i.unit)}</td>
+            <td><div style="font-size:12px">${pct(q/r.outQ*100)}</div><div class="bar"><i style="width:${Math.max(3,Math.round(q/r.outQ*100))}%"></i></div></td></tr>`).join('')}</tbody></table>
+          <div style="font-weight:700;color:var(--txt);margin:2px 0 6px">عمليات الصرف</div>
+          ${movesTbl(r.outs)}
+        </td></tr>`:''}`).join('')}</tbody></table></div>
+    <div class="card-b note" style="border-top:1px solid var(--line2)">المتوسط اليومي = المنصرف ÷ ${T.days} يوم. «يكفي تقريبًا» = الرصيد الحالي ÷ المتوسط اليومي. الحصة محسوبة بين الأصناف اللي لها نفس الوحدة.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><h3>الصرف حسب الجهة</h3><span class="sub">${T.parties.length} جهة · ${T.totN} عملية صرف</span></div>
+    <div class="tblwrap"><table><thead><tr><th>الجهة</th><th class="num">مرات الصرف</th><th style="min-width:140px">النسبة من العمليات</th><th>الكميات</th><th class="num">عدد الأصناف</th><th>أكثر صنف</th></tr></thead>
+      <tbody>${T.parties.map(x=>`<tr><td><b>${esc(x.party)}</b></td><td class="num">${x.n}</td>
+        <td><div style="font-size:12px;font-weight:700">${pct(x.share)}</div><div class="bar"><i style="width:${Math.max(3,Math.round(x.share))}%"></i></div></td>
+        <td class="wrap">${esc(unitTxt(x.u))}</td><td class="num">${x.itemsN}</td><td class="wrap">${esc(x.topItem)}</td></tr>`).join('')}</tbody></table></div>
   </div>`;
 }
 
-/* ---------- 6) التقرير اليومي ---------- */
-const dayBefore=d=>{const dt=new Date(d+'T00:00:00');dt.setDate(dt.getDate()-1);return dt.toISOString().slice(0,10)};
-function vRepDay(){
-  const days=Array.from(new Set(visMoves().map(m=>m.date))).filter(Boolean).sort().reverse();
-  if(!days.length)days.push(today());
-  const cur=F.day||days[0];
-  const type=F.dtype||'out';
-
-  const rows=visItems().filter(i=>!F.rdcat||(i.category||'')===F.rdcat).map(i=>{
-    const mv=DB.moves.filter(m=>m.itemId===i.id&&m.date===cur);
-    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
-    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
-    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
-    const cnt=mv.filter(m=>m.type===type).length;
-    const open=bal(i.id,dayBefore(cur));
-    return {i,inQ,outQ,dmQ,cnt,open,close:open+inQ-outQ-dmQ,det:mv.filter(m=>m.type===type)};
-  }).filter(r=>({in:r.inQ,out:r.outQ,damage:r.dmQ}[type])>0)
-    .sort((a,b)=>({in:b.inQ-a.inQ,out:b.outQ-a.outQ,damage:b.dmQ-a.dmQ})[type]);
-
-  const tot=rows.reduce((a,r)=>a+({in:r.inQ,out:r.outQ,damage:r.dmQ}[type]),0);
-  const totC=rows.reduce((a,r)=>a+r.cnt,0);
-  const partyLabel=type==='in'?'المورد':(type==='out'?'العميل / الجهة':'سبب التلف');
-  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
-  const em=t=>t===type?' style="font-size:15px;font-weight:800"':'';
-
+function repCatBody(D){
+  const {R}=D,{P,catRows,rows,tot}=R, all=VIEW==='all';
+  if(!rows.length)return `<div class="card"><div class="empty"><strong>لا توجد حركة في ${esc(P.label)}</strong>غيّر الفترة أو الفلاتر، أو اضغط «إظهار كل الأصناف».</div></div>`;
   return `
-  <div class="pagehead"><h2>التقرير اليومي</h2><p>اختر يومًا لعرض كل صنف تحرّك خلاله وتفاصيل عملياته.</p></div>
-
-  <div class="card"><div class="card-b"><div class="grid g2">
-    <label class="f"><span>اليوم</span><input type="date" data-f="day" value="${esc(cur)}"></label>
-    <label class="f"><span>نوع الحركة</span><select data-f="dtype">
-      <option value="out" ${type==='out'?'selected':''}>المنصرف</option>
-      <option value="in" ${type==='in'?'selected':''}>الوارد</option>
-      <option value="damage" ${type==='damage'?'selected':''}>التالف</option></select></label>
-    <label class="f"><span>التصنيف</span><select data-f="rdcat"><option value="">كل التصنيفات</option>
-      ${allCats().map(c=>`<option value="${esc(c)}" ${F.rdcat===c?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
-  </div>
-  <div class="btnrow" style="margin-top:12px">
-    <button class="btn" data-a="printday">طباعة / PDF</button>
-    <button class="btn" data-a="excelday">تصدير Excel</button>
-  </div></div></div>
-
   <div class="card">
-    <div class="card-h"><h3>${typeTitle} — ${dH(cur)}</h3>
-      <span class="sub">${rows.length} صنف · إجمالي الكمية ${fmt(tot)}</span></div>
-    <div class="tblwrap">
-    ${rows.length?`<table><thead><tr>
-      <th>اسم الصنف</th><th>التصنيف</th><th>الوحدة</th><th class="num">رصيد أول اليوم</th><th class="num">الوارد</th>
-      <th class="num">المنصرف</th><th class="num">التالف</th><th class="num">عدد المرات</th><th class="num">رصيد آخر اليوم</th><th></th></tr></thead>
-      <tbody>${rows.map((r,k)=>`
-        <tr><td class="wrap"><b>${esc(r.i.name)}</b></td><td style="color:var(--txt2)">${esc(r.i.category)||'—'}</td><td>${esc(r.i.unit)}</td>
-          <td class="num">${fmt(r.open)}</td><td class="num"${em('in')}>${fmt(r.inQ)}</td>
-          <td class="num"${em('out')}>${fmt(r.outQ)}</td><td class="num"${em('damage')}>${fmt(r.dmQ)}</td>
-          <td class="num">${fmt(r.cnt)}</td><td class="num">${fmt(r.close)}</td>
-          <td><button class="btn ghost sm" data-a="toggle" data-k="${k}">${F.open===k?'إخفاء':'التفاصيل'}</button></td></tr>
-        ${F.open===k?`<tr class="detail"><td colspan="10">
-          <table style="margin:0"><thead><tr><th>رقم العملية</th><th>${partyLabel}</th><th class="num">الكمية</th><th>ملاحظات</th></tr></thead>
-          <tbody>${r.det.map(m=>`<tr><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
-            <td class="num">${fmt(m.qty)}</td><td class="wrap">${esc(m.notes)||'—'}</td></tr>`).join('')}</tbody></table>
-        </td></tr>`:''}`).join('')}</tbody>
-      <tfoot><tr><td colspan="4">الإجمالي</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.inQ,0))}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.outQ,0))}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.dmQ,0))}</td>
-        <td class="num">${fmt(totC)}</td>
-        <td class="num">${fmt(rows.reduce((a,r)=>a+r.close,0))}</td><td></td></tr></tfoot></table>`
-    :`<div class="empty"><strong>لا توجد حركة في ${dH(cur)}</strong>اختر يومًا آخر أو سجّل عملية جديدة.</div>`}
-    </div>
-  </div>`;
+    <div class="card-h"><h3>ملخص التصنيفات</h3><span class="sub">${catRows.length} تصنيف · ${tot.cnt} عملية</span></div>
+    <div class="tblwrap"><table><thead><tr><th>التصنيف</th><th class="num">الأصناف</th><th class="num">تحرّك منها</th><th class="num">العمليات</th><th style="min-width:130px">النسبة من العمليات</th>
+      <th>الوارد</th><th>المنصرف</th><th>التالف</th><th class="num">تحتاج متابعة</th><th>أكثر صنف صرفًا</th></tr></thead>
+      <tbody>${catRows.map(c=>`<tr><td><b>${esc(c.cat)}</b></td><td class="num">${c.items}</td><td class="num">${c.moved}</td><td class="num">${c.cnt}</td>
+        <td><div style="font-size:12px;font-weight:700">${pct(c.share)}</div><div class="bar"><i style="width:${Math.max(3,Math.round(c.share))}%"></i></div></td>
+        <td class="wrap">${esc(unitTxt(c.inU))}</td><td class="wrap"><b>${esc(unitTxt(c.outU))}</b></td><td class="wrap">${esc(unitTxt(c.dmU))}</td>
+        <td class="num">${c.warn?`<span class="tag low">${c.warn}</span>`:'0'}</td>
+        <td class="wrap">${c.topItem?`${esc(c.topItem.i.name)} <span style="color:var(--txt2)">(${fmt(c.topItem.outQ)} ${esc(c.topItem.i.unit)})</span>`:'—'}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td>الإجمالي</td><td class="num">${rows.length}</td><td class="num">${tot.moved}</td><td class="num">${tot.cnt}</td><td></td><td colspan="3"></td><td class="num">${tot.warn}</td><td></td></tr></tfoot></table></div>
+    <div class="card-b note" style="border-top:1px solid var(--line2)">الكميات مجموعة لكل وحدة على حدة (مثل: 26 حبة + 85 متر) عشان ما تنجمع وحدات مختلفة.</div>
+  </div>
+
+  ${catRows.map((c,ci)=>`<div class="card">
+    <div class="card-h"><h3>${esc(c.cat)}</h3><span class="sub">${c.items} صنف · ${c.cnt} عملية · ${pct(c.share)} من العمليات</span></div>
+    <div class="tblwrap"><table><thead><tr><th>م</th><th>الصنف</th>${brTh()}<th>الوحدة</th>
+      <th class="num">رصيد أول المدة</th><th class="num">الوارد</th><th class="num">المنصرف</th><th class="num">التالف</th>
+      <th class="num">رصيد آخر المدة</th><th>الحالة</th><th class="num">العمليات</th></tr></thead>
+      <tbody>${c.rows.map((r,k)=>`<tr><td style="color:var(--txt2)">${k+1}</td><td class="wrap"><b>${esc(r.i.name)}</b></td>${brCell(r.i)}<td>${esc(r.i.unit)}</td>
+        <td class="num">${fmt(r.open)}</td><td class="num">${zN(r.inQ)}</td><td class="num">${zN(r.outQ)}</td><td class="num">${zN(r.dmQ)}</td>
+        <td class="num" style="font-size:14.5px">${fmt(r.close)}</td><td>${stCell(r)}</td><td class="num">${r.cnt}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="${all?4:3}">المجموع</td><td class="num">${esc(unitTxt(c.openU))}</td><td class="num">${esc(unitTxt(c.inU))}</td>
+        <td class="num">${esc(unitTxt(c.outU))}</td><td class="num">${esc(unitTxt(c.dmU))}</td><td class="num">${esc(unitTxt(c.closeU))}</td><td></td><td class="num">${c.cnt}</td></tr></tfoot></table></div>
+  </div>`).join('')}`;
 }
 
 /* ---------- الطباعة والتصدير ---------- */
-function repData(){
-  const months=Array.from(new Set(visMoves().map(m=>ym(m.date)))).sort().reverse();
-  const cur=F.ym||months[0]||ym(today()); const type=F.type||'out';
-  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
-  const head=['اسم الصنف','التصنيف','الوحدة','رصيد أول الشهر','الوارد','المنصرف','التالف','عدد المرات','رصيد آخر الشهر'];
-  const body=[];
-  visItems().filter(i=>!F.rcat||(i.category||'')===F.rcat).forEach(i=>{
-    const mv=DB.moves.filter(m=>m.itemId===i.id&&ym(m.date)===cur);
-    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
-    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
-    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
-    if(!({in:inQ,out:outQ,damage:dmQ}[type]))return;
-    const open=bal(i.id,cur+'-00');
-    body.push([i.name,i.category||'—',i.unit,fmt(open),fmt(inQ),fmt(outQ),fmt(dmQ),fmt(mv.filter(m=>m.type===type).length),fmt(open+inQ-outQ-dmQ)]);
-  });
-  return {title:`تقرير ${typeTitle} — ${mName(cur)}`,head,body};
-}
-function repDataDay(){
-  const days=Array.from(new Set(visMoves().map(m=>m.date))).sort().reverse();
-  const cur=F.day||days[0]||today(); const type=F.dtype||'out';
-  const typeTitle={in:'الوارد',out:'المنصرف',damage:'التالف'}[type];
-  const head=['اسم الصنف','التصنيف','الوحدة','رصيد أول اليوم','الوارد','المنصرف','التالف','عدد المرات','رصيد آخر اليوم'];
-  const body=[];
-  visItems().filter(i=>!F.rdcat||(i.category||'')===F.rdcat).forEach(i=>{
-    const mv=DB.moves.filter(m=>m.itemId===i.id&&m.date===cur);
-    const inQ=mv.filter(m=>m.type==='in').reduce((a,m)=>a+n(m.qty),0);
-    const outQ=mv.filter(m=>m.type==='out').reduce((a,m)=>a+n(m.qty),0);
-    const dmQ=mv.filter(m=>m.type==='damage').reduce((a,m)=>a+n(m.qty),0);
-    if(!({in:inQ,out:outQ,damage:dmQ}[type]))return;
-    const open=bal(i.id,dayBefore(cur));
-    body.push([i.name,i.category||'—',i.unit,fmt(open),fmt(inQ),fmt(outQ),fmt(dmQ),fmt(mv.filter(m=>m.type===type).length),fmt(open+inQ-outQ-dmQ)]);
-  });
-  return {title:`تقرير ${typeTitle} — ${dH(cur)}`,head,body};
-}
-function printRep(r){
-  $('#print-zone').innerHTML=`<h2 style="margin:0 0 4px">${esc(r.title)}</h2>
-    <div style="font-size:11px;color:#555;border-bottom:1px solid #999;padding-bottom:6px;margin-bottom:10px">نظام المخزون — كميات فقط · تاريخ الطباعة ${dH(today())}</div>
-    ${r.body.length?`<table><thead><tr>${r.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
-    <tbody>${r.body.map(x=>`<tr>${x.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`:'<p>لا توجد بيانات.</p>'}`;
+const CELL_C={'نفد':'c-red','منخفض':'c-amb','مؤرشف':'c-red','التالف':'c-red','الوارد':'c-grn','المنصرف':'c-blu'};
+const repTitle=v=>RVIEWS.find(x=>x[0]===v)[2];
+function repPrint(){
+  const D=repData(),{v,R}=D,{P}=R, sheets=repSheets(D).filter(s=>s.body.length);
+  if(!sheets.length)return toast('لا توجد بيانات للطباعة في هذه الفترة.','bad');
+  const cell=c=>typeof c==='number'?`<td class="num">${fmt(c)}</td>`:`<td${CELL_C[c]?` class="${CELL_C[c]}"`:''}>${esc(c)}</td>`;
+  const ord=['أولاً','ثانيًا','ثالثًا','رابعًا','خامسًا','سادسًا','سابعًا','ثامنًا','تاسعًا','عاشرًا'];
+  const tbl=(s,k)=>`<h3>${ord[k]?ord[k]+': ':''}${esc(s.title)}</h3><table><thead><tr>${s.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${s.body.map(r=>`<tr>${r.map(cell).join('')}</tr>`).join('')}</tbody>
+    ${s.foot?`<tfoot><tr>${s.foot.map(cell).join('')}</tr></tfoot>`:''}</table>`;
+  $('#print-zone').innerHTML=`<div class="pr">
+    <div class="pr-head">
+      <div><div class="pr-brand">دوكمنتيشن فلاورز</div><div class="pr-sys">نظام المخزون العام · كميات فقط</div></div>
+      <div class="pr-title"><h1>${esc(repTitle(v))}</h1><div>${esc(P.label)} (${P.days} يوم)</div></div>
+    </div>
+    <div class="pr-meta">
+      <span>الفرع: <b>${esc(R.branchLabel)}</b></span>${v!=='top'?`<span>نوع الحركة: <b>${esc(R.typeLabel)}</b></span>`:''}
+      <span>التصنيف: <b>${esc(R.cat||'كل التصنيفات')}</b></span>${R.q?`<span>بحث: <b>${esc(R.q)}</b></span>`:''}
+      <span>تاريخ الطباعة: <b>${esc(fmtTime(Date.now()))}</b></span><span>بواسطة: <b>${esc(byName(CUR_EMAIL))}</b></span>
+    </div>
+    <div class="pr-kpis">${repKpis(D).map(k=>`<div><span>${esc(k.l)}</span><b>${esc(k.v)}</b><small>${esc(k.s)}</small></div>`).join('')}</div>
+    ${sheets.map(tbl).join('')}
+    <div class="pr-sign">
+      <div>أمين المخزن<br>الاسم: ............................ التوقيع: ....................</div>
+      <div>اعتماد الإدارة<br>الاسم: ............................ التوقيع: ....................</div>
+    </div>
+    <div class="pr-foot">تقرير آلي من نظام المخزون — دوكمنتيشن فلاورز</div>
+  </div>`;
   setTimeout(()=>print(),60);
 }
-function excelRep(r){
-  if(!r.body.length)return toast('لا توجد بيانات للتصدير.','bad');
-  const html=`<html dir="rtl"><head><meta charset="utf-8"></head><body><table border="1">
-    <tr><th colspan="${r.head.length}">${esc(r.title)}</th></tr>
-    <tr>${r.head.map(h=>`<th>${h}</th>`).join('')}</tr>
-    ${r.body.map(x=>`<tr>${x.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></body></html>`;
-  dl(new Blob(['\ufeff'+html],{type:'application/vnd.ms-excel'}),r.title+'.xls');
+function repExcel(){
+  const D=repData(),{v,R}=D,{P}=R, sheets=repSheets(D).filter(s=>s.body.length);
+  if(!sheets.length)return toast('لا توجد بيانات للتصدير.','bad');
+  const W=Math.max(...sheets.map(s=>s.head.length)), kp=repKpis(D);
+  const B='border:.5pt solid #9AA9A7;';
+  const cell=(c,s='')=>typeof c==='number'?`<td style="${B}${s}text-align:center">${c}</td>`:`<td style="${B}${s}">${esc(c)}</td>`;
+  const row=(cells,s)=>`<tr>${cells.map(c=>cell(c,s)).join('')}</tr>`;
+  const full=(t,s)=>`<tr><td colspan="${W}" style="${s}">${t}</td></tr>`;
+  const HEAD='background:#0D2026;color:#FFFFFF;font-weight:bold;text-align:center;';
+  const html=`<html dir="rtl" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+  <head><meta charset="utf-8">${'<'+'!--'}[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>${esc(RVIEWS.find(x=>x[0]===v)[1])}</x:Name>
+  <x:WorksheetOptions><x:DisplayRightToLeft/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--${'>'}</head>
+  <body dir="rtl"><table style="font-family:Tahoma,Arial;font-size:11pt;direction:rtl">
+    ${full(`دوكمنتيشن فلاورز — ${esc(repTitle(v))}`,'font-size:16pt;font-weight:bold;color:#0D2026')}
+    ${full(`${esc(P.label)} (${P.days} يوم)`,'font-size:12pt;font-weight:bold;color:#0E6E63')}
+    ${full(`الفرع: ${esc(R.branchLabel)}${v!=='top'?` · نوع الحركة: ${esc(R.typeLabel)}`:''} · التصنيف: ${esc(R.cat||'كل التصنيفات')}${R.q?` · بحث: ${esc(R.q)}`:''}`,'color:#5C7076')}
+    ${full(`تاريخ التصدير: ${esc(fmtTime(Date.now()))} · بواسطة: ${esc(byName(CUR_EMAIL))}`,'color:#5C7076')}
+    <tr></tr>
+    ${row(kp.map(k=>k.l),HEAD)}
+    ${row(kp.map(k=>k.v),'font-weight:bold;font-size:12pt;')}
+    ${sheets.map(s=>`<tr></tr>
+      ${full(esc(s.title),'background:#E4F1EE;color:#0A5B52;font-weight:bold;font-size:12pt')}
+      ${row(s.head,HEAD)}
+      ${s.body.map(r=>row(r)).join('')}
+      ${s.foot?row(s.foot,'background:#F1F5F4;font-weight:bold;'):''}`).join('')}
+  </table></body></html>`;
+  const pre={sum:'تقرير_المخزون',top:'الأصناف_الأكثر_استهلاكا',cat:'تقرير_التصنيفات'}[v];
+  const fname=P.mode==='month'?`${pre}_${P.ym}`:P.mode==='day'?`${pre}_${P.from}`:`${pre}_${P.from}_إلى_${P.to}`;
+  dl(new Blob(['﻿'+html],{type:'application/vnd.ms-excel'}),fname+'.xls');
 }
-function doPrint(){printRep(repData())}
-function doExcel(){excelRep(repData())}
-function doPrintDay(){printRep(repDataDay())}
-function doExcelDay(){excelRep(repDataDay())}
 function dl(blob,name){
   try{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;
     document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1200);toast('تم تجهيز الملف.')}
@@ -817,7 +1111,7 @@ async function rcConfirm(){
   partsDoc.forEach((p,k)=>{
     const mid=r.id+'_'+k;
     upd[`moves/${mid}`]={id:mid,type:'in',date:today(),no:String(r.invoiceNo||''),party:String(r.supplier||''),itemId:p.itemId,qty:p.qty,
-      notes:'توريد من المشتريات'+(note?' — '+note:''),by:CUR_EMAIL||'',receiptId:r.id};
+      notes:'توريد من المشتريات'+(r.invoiceDate?` (فاتورة ${dH(r.invoiceDate)})`:'')+(note?' — '+note:''),by:CUR_EMAIL||'',receiptId:r.id};
   });
   upd[`receipts/${r.id}/status`]='confirmed';
   upd[`receipts/${r.id}/confirmedBy`]=CUR_EMAIL||'';
@@ -898,6 +1192,16 @@ function bind(){
     el.onclick=()=>{
       switch(a){
         case 'goopen':go('open');break;
+        case 'gorcv':go('rcv');break;
+        case 'fixneg':{  // تسوية جرد للأصناف اللي نزل رصيدها تحت الصفر — للإدارة فقط
+          if(!CUR_ALL)break;
+          const list=negItems();if(!list.length)break;
+          const why=prompt(`تسوية ${list.length} صنف: بتنضاف حركة وارد «تسوية جرد» لكل صنف بتاريخ أول يوم صار فيه الخلل.\n\nاكتب السبب (مثال: فواتير انحذفت من المشتريات بعد الصرف):`);
+          if(why===null)return;if(!why.trim())return toast('اكتب سبب التسوية.','bad');
+          const upd={};
+          list.forEach(r=>{const mv={id:uid(),type:'in',date:r.x.date,no:'تسوية',party:'تسوية جرد',itemId:r.i.id,qty:r.x.qty,notes:'تسوية رصيد — '+why.trim(),by:CUR_EMAIL||''};
+            DB.moves.push(mv);upd[`moves/${mv.id}`]=mv});
+          fbWrite(upd);render();toast(`تمت تسوية ${list.length} صنف — الأرصدة مضبوطة الحين.`);break}
         case 'rcopen':{const r=rcById(el.dataset.id);if(r){rcOpen(r);render()}break}
         case 'rcclose':{RC_KEYS.forEach(k=>delete F[k]);render();break}
         case 'rcsplit':{F.rmode='split';F.rparts=[];F.rsq=(rcById(F.rid)||{}).name?rcById(F.rid).name+' ':'';render();const s=document.getElementById('rc-s');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length)}break}
@@ -939,7 +1243,10 @@ function bind(){
             }
             i.name=v;saveItemFields(i.id,{name:v});
           });
-          R.querySelectorAll('[data-op]').forEach(x=>{const i=it(x.dataset.op);if(i){const v=n(x.value);if(v!==i.opening){i.opening=v;saveItemFields(i.id,{opening:v})}}});
+          R.querySelectorAll('[data-op]').forEach(x=>{const i=it(x.dataset.op);if(i){const v=n(x.value);if(v!==n(i.opening)){
+            const after=minBalFrom(i.id,'0000-00-00')-n(i.opening)+v;
+            if(after<-1e-9){toast(`«${i.name}»: الافتتاحي ${fmt(v)} أقل من اللي انصرف — يخلّي الرصيد سالب. تم تجاهل هذا التعديل.`,'bad');x.value=n(i.opening);nameErr=true;return}
+            i.opening=v;saveItemFields(i.id,{opening:v})}}});
           R.querySelectorAll('[data-mn]').forEach(x=>{const i=it(x.dataset.mn);if(i){const v=n(x.value);if(v!==i.min){i.min=v;saveItemFields(i.id,{min:v})}}});
           R.querySelectorAll('[data-cat]').forEach(x=>{const i=it(x.dataset.cat);if(i){const v=x.value.trim();if(v!==(i.category||'')){i.category=v;saveItemFields(i.id,{category:v})}}});
           R.querySelectorAll('[data-unit]').forEach(x=>{const i=it(x.dataset.unit);if(i&&x.value.trim()){const v=x.value.trim();if(v!==i.unit){i.unit=v;saveItemFields(i.id,{unit:v})}}});
@@ -970,8 +1277,9 @@ function bind(){
           if(!iid)return toast('اختر الصنف من نتائج البحث أولاً.','bad');
           if(q<=0)return toast('أدخل كمية أكبر من صفر.','bad');
           if(type==='out'||type==='damage'){
-            const av=bal(iid);
-            if(q>av)return toast(`المتاح من «${it(iid).name}» هو ${fmt(av)} فقط.`,'bad');
+            const d=F.mdate||today();
+            const av=minBalFrom(iid,d);   // عملية بتاريخ قديم لازم ما تخلّي الرصيد سالب بأي يوم بعدها
+            if(q>av)return toast(`المتاح من «${it(iid).name}» ${d<today()?`بتاريخ ${dH(d)} `:''}هو ${fmt(av)} فقط.`,'bad');
           }
           const newMove={id:uid(),type,date:F.mdate||today(),no:(F.mno||'').trim(),
             party:(F.mparty||'').trim(),itemId:iid,qty:q,notes:(F.mnotes||'').trim(),by:CUR_EMAIL||''};
@@ -988,16 +1296,20 @@ function bind(){
         case 'delmove':{
           const mid=el.dataset.id;
           const mvx=DB.moves.find(m=>m.id===mid);
-          if(mvx&&mvx.receiptId&&!CUR_ALL)return toast('هذي الحركة من توريد مشتريات — حذفها من صلاحية الإدارة.','bad');
+          if(!CUR_ALL)return toast('حذف الحركات من صلاحية الإدارة فقط — تواصل مع رؤوف أو سعود.','bad');
+          if(mvx&&mvx.type==='in'&&minBalFrom(mvx.itemId,mvx.date)-n(mvx.qty)<-1e-9)
+            return toast(`ما ينفع تحذف هذا الوارد — انصرف منه، وحذفه يخلّي رصيد «${(it(mvx.itemId)||{}).name}» سالب. احذف المنصرف الغلط أول.`,'bad');
           if(!confirm(mvx&&mvx.receiptId?'هذي الحركة جاية من توريد مشتريات مؤكد. حذفها يخصم الكمية من الرصيد لكن التوريد يظل «مستلم» عند المشتريات. متابعة؟':'حذف هذه العملية؟ سيُعاد حساب الرصيد تلقائيًا.'))return;
           DB.moves=DB.moves.filter(m=>m.id!==mid);deleteMoveRemote(mid);render();toast('تم الحذف وتحديث الرصيد.');break}
         case 'toggle':{const k=+el.dataset.k;F.open=F.open===k?null:k;render();break}
         case 'mprev':{F.mpage=Math.max(0,(F.mpage||0)-1);render();break}
         case 'mnext':{F.mpage=(F.mpage||0)+1;render();break}
-        case 'print':doPrint();break;
-        case 'excel':doExcel();break;
-        case 'printday':doPrintDay();break;
-        case 'excelday':doExcelDay();break;
+        case 'rview':{F.rview=el.dataset.v;delete F.open;render();scrollTo(0,0);break}
+        case 'pmode':{F.pmode=el.dataset.v;delete F.open;render();break}
+        case 'ridle':{F.ridle=!F.ridle;delete F.open;render();break}
+        case 'mvall':{F.mvall=!F.mvall;render();break}
+        case 'repprint':repPrint();break;
+        case 'repexcel':repExcel();break;
         case 'backup':{
           const data=VIEW==='all'?DB:{items:visItems(),moves:visMoves()};
           dl(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),`نسخة_المخزون_${today()}.json`);break}
@@ -1163,6 +1475,11 @@ if(fbRef){
       return;
     }
     if(user){
+      if(!access(user.email)){
+        firebase.auth().signOut();
+        $('#lg-err').textContent='هذا الحساب غير مصرّح له بنظام المخزون — تواصل مع الإدارة.';
+        return;
+      }
       CUR_EMAIL=user.email; const a=access(CUR_EMAIL); CUR_ALL=a.branch==='all'; CUR_BRANCH=CUR_ALL?null:a.branch;
       VIEW=CUR_ALL?'all':CUR_BRANCH;
       $('#gate').style.display='none'; $('#app').style.display='';
