@@ -293,6 +293,9 @@ function negInfo(id){
   dates.forEach(d=>{const b=bal(id,d);if(b<-1e-9){if(!start)start=d}else start=null});
   return {qty:R3(-now),date:start||today(),now};
 }
+/* تعديل وحذف الحركات اليدوية للكل؛ حركات توريد المشتريات والتسوية للإدارة فقط
+   (تعديلها يفك ربطها بالمشتريات أو يلخبط الجرد) */
+const canEditMove=m=>CUR_ALL||(!m.receiptId&&!isAdj(m));
 /* حركات التسوية والجرد تضبط الرصيد بس — ما تنحسب صرف ولا وارد بالتقارير */
 const isAdj=m=>m.no==='تسوية'||m.party==='تسوية جرد';
 const negItems=()=>visItems().map(i=>({i,x:negInfo(i.id)})).filter(r=>r.x);
@@ -513,12 +516,22 @@ function vMove(){
     <div class="tblwrap">
     ${rows.length?`<table><thead><tr><th>التاريخ</th><th>رقم العملية</th><th>${CFG.party}</th>
       <th>الصنف</th><th>التصنيف</th><th class="num">الكمية</th><th>الوحدة</th><th>ملاحظات</th><th>أضافها</th><th></th></tr></thead>
-      <tbody>${pageRows.map(m=>{const i=it(m.itemId)||{};return `<tr>
+      <tbody>${pageRows.map(m=>{const i=it(m.itemId)||{};
+        if(F.medit===m.id)return `<tr style="background:#FBFCFB">
+        <td><input type="date" id="e-date" data-rc="edate" value="${esc(F.edate)}" style="min-width:130px"></td>
+        <td><input id="e-no" data-rc="eno" value="${esc(F.eno)}" style="min-width:90px"></td>
+        <td><input id="e-party" data-rc="eparty" value="${esc(F.eparty)}" style="min-width:110px"></td>
+        <td class="wrap"><b>${esc(i.name)}</b></td><td style="color:var(--txt2)">${esc(i.category)||'—'}</td>
+        <td><input id="e-qty" type="number" step="any" min="0" data-rc="eqty" value="${esc(F.eqty)}" style="width:90px"></td><td>${esc(i.unit)}</td>
+        <td><input id="e-notes" data-rc="enotes" value="${esc(F.enotes)}" style="min-width:120px"></td>
+        <td style="font-size:11.5px;color:var(--txt2)">${esc(m.by)||'—'}</td>
+        <td><div class="btnrow"><button class="btn primary sm" data-a="savemove">حفظ</button><button class="btn ghost sm" data-a="cancelmove">إلغاء</button></div></td></tr>`;
+        return `<tr>
         <td>${dH(m.date)}</td><td>${esc(m.no)||'—'}</td><td class="wrap">${esc(m.party)||'—'}</td>
         <td class="wrap"><b>${esc(i.name)}</b></td><td style="color:var(--txt2)">${esc(i.category)||'—'}</td><td class="num">${fmt(m.qty)}</td><td>${esc(i.unit)}</td>
-        <td class="wrap" style="color:var(--txt2)">${esc(m.notes)||'—'}</td>
+        <td class="wrap" style="color:var(--txt2)">${esc(m.notes)||'—'}${m.editedBy?`<div style="font-size:11px">عُدّلت بواسطة ${esc((m.editedBy||'').split('@')[0])}</div>`:''}</td>
         <td style="font-size:11.5px;color:var(--txt2)">${esc(m.by)||'—'}</td>
-        <td>${CUR_ALL?`<button class="btn ghost sm" data-a="delmove" data-id="${m.id}">حذف</button>`:''}</td></tr>`}).join('')}</tbody>
+        <td>${canEditMove(m)?`<div class="btnrow"><button class="btn ghost sm" data-a="editmove" data-id="${m.id}">تعديل</button><button class="btn ghost sm" data-a="delmove" data-id="${m.id}">حذف</button></div>`:''}</td></tr>`}).join('')}</tbody>
       <tfoot><tr><td colspan="5">الإجمالي (كل النتائج)</td><td class="num">${fmt(total)}</td><td colspan="4"></td></tr></tfoot></table>`
     :`<div class="empty"><strong>لا توجد عمليات</strong>سجّل أول عملية من النموذج بالأعلى.</div>`}
     </div>
@@ -1065,11 +1078,30 @@ function bind(){
         case 'delmove':{
           const mid=el.dataset.id;
           const mvx=DB.moves.find(m=>m.id===mid);
-          if(!CUR_ALL)return toast('حذف الحركات من صلاحية الإدارة فقط — تواصل مع رؤوف أو سعود.','bad');
+          if(!mvx)break;
+          if(!canEditMove(mvx))return toast('هذي الحركة من توريد مشتريات أو تسوية — حذفها من صلاحية الإدارة.','bad');
           if(mvx&&mvx.type==='in'&&minBalFrom(mvx.itemId,mvx.date)-n(mvx.qty)<-1e-9)
             return toast(`ما ينفع تحذف هذا الوارد — انصرف منه، وحذفه يخلّي رصيد «${(it(mvx.itemId)||{}).name}» سالب. احذف المنصرف الغلط أول.`,'bad');
           if(!confirm(mvx&&mvx.receiptId?'هذي الحركة جاية من توريد مشتريات مؤكد. حذفها يخصم الكمية من الرصيد لكن التوريد يظل «مستلم» عند المشتريات. متابعة؟':'حذف هذه العملية؟ سيُعاد حساب الرصيد تلقائيًا.'))return;
           DB.moves=DB.moves.filter(m=>m.id!==mid);deleteMoveRemote(mid);render();toast('تم الحذف وتحديث الرصيد.');break}
+        case 'editmove':{
+          const m=DB.moves.find(x=>x.id===el.dataset.id);if(!m||!canEditMove(m))break;
+          Object.assign(F,{medit:m.id,edate:m.date,eno:m.no||'',eparty:m.party||'',eqty:String(n(m.qty)),enotes:m.notes||''});render();break}
+        case 'cancelmove':{['medit','edate','eno','eparty','eqty','enotes'].forEach(k=>delete F[k]);render();break}
+        case 'savemove':{
+          const idx=DB.moves.findIndex(x=>x.id===F.medit);if(idx<0)break;
+          const old=DB.moves[idx];if(!canEditMove(old))break;
+          const q=n(F.eqty),d=F.edate||old.date;
+          if(q<=0)return toast('أدخل كمية أكبر من صفر.','bad');
+          if(d>today())return toast('ما ينفع تاريخ بالمستقبل.','bad');
+          const upd=Object.assign({},old,{date:d,no:(F.eno||'').trim(),party:(F.eparty||'').trim(),qty:q,notes:(F.enotes||'').trim(),
+            editedBy:CUR_EMAIL||'',editedAt:Date.now()});
+          // نجرّب التعديل: لو يخلّي الرصيد سالب بأي يوم نرفضه
+          DB.moves[idx]=upd;
+          const from=d<old.date?d:old.date, ok=minBalFrom(old.itemId,from)>=-1e-9;
+          if(!ok){DB.moves[idx]=old;return toast(`التعديل يخلّي رصيد «${(it(old.itemId)||{}).name}» سالب — راجع الكمية أو التاريخ.`,'bad')}
+          ['medit','edate','eno','eparty','eqty','enotes'].forEach(k=>delete F[k]);
+          saveMove(upd);render();toast('تم التعديل وتحديث الرصيد.');break}
         case 'toggle':{const k=+el.dataset.k;F.open=F.open===k?null:k;render();break}
         case 'mprev':{F.mpage=Math.max(0,(F.mpage||0)-1);render();break}
         case 'mnext':{F.mpage=(F.mpage||0)+1;render();break}
