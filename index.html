@@ -297,6 +297,9 @@ function negInfo(id){
    (تعديلها يفك ربطها بالمشتريات أو يلخبط الجرد) */
 const canEditMove=m=>CUR_ALL||(!m.receiptId&&!isAdj(m));
 /* حركات التسوية والجرد تضبط الرصيد بس — ما تنحسب صرف ولا وارد بالتقارير */
+/* توريدات المشتريات المعلّقة اللي تخص الصنف: بنفس اسمه، أو مربوطة فيه من قبل (توزيع ألوان/أقسام) */
+const pendFor=i=>RC.filter(r=>r&&r.id&&r.status==='pending'&&(r.branch||DEFAULT_BRANCH)===(i.branch||DEFAULT_BRANCH)&&
+  (sameName(r.name,i.name)||((RMAP[rcMapKey(r)]||{}).itemIds||[]).includes(i.id)));
 const isAdj=m=>m.no==='تسوية'||m.party==='تسوية جرد';
 const negItems=()=>visItems().map(i=>({i,x:negInfo(i.id)})).filter(r=>r.x);
 /* أقل رصيد من تاريخ معيّن لين اليوم — يُستخدم للتحقق من عمليات الصرف بتاريخ قديم */
@@ -339,7 +342,6 @@ function vOpen(){
   if(F.qcat)list=list.filter(i=>(i.category||'')===F.qcat);
   const low=lowItems();
   const neg=negItems();
-  const pendFor=i=>pendingRc().filter(r=>(r.branch||DEFAULT_BRANCH)===(i.branch||DEFAULT_BRANCH)&&sameName(r.name,i.name));
   const lowByBranch={};
   low.forEach(x=>{const br=x.i.branch||DEFAULT_BRANCH;(lowByBranch[br]=lowByBranch[br]||[]).push(x)});
   return `
@@ -487,6 +489,10 @@ function vMove(){
         <label class="f"><span>الصنف *</span>
           <input id="mq" data-f="mq" data-live="1" autocomplete="off" value="${esc(F.mq||'')}" placeholder="اكتب جزءًا من اسم الصنف... مثال: فازه">
           ${picked?`<div style="font-size:11.5px;color:var(--txt2);margin-top:4px">✓ ${esc(picked.name)} — المتاح حاليًا ${fmt(bal(picked.id))} ${esc(picked.unit)}${VIEW==='all'?` <span class="badge-branch">${esc(picked.branch||DEFAULT_BRANCH)}</span>`:''}</div>`:''}
+          ${picked&&V==='in'&&pendFor(picked).length?`<div style="margin-top:6px;padding:8px 10px;border-radius:8px;background:#FBF0DC;color:#8A5A08;font-size:12.5px;font-weight:600">
+            ⚠️ هذا الصنف له توريد معلّق من المشتريات (${pendFor(picked).map(r=>`${fmt(r.qty)} ${esc(r.unit)} — فاتورة ${esc(r.invoiceNo)||'—'}`).join('، ')}).
+            لو هي نفس البضاعة أكّدها من «توريدات واردة» بدل الإدخال اليدوي، عشان ما تنحسب مرتين.
+            <button type="button" class="btn sm" data-a="gorcv" style="margin-inline-start:6px">روح للتوريدات</button></div>`:''}
         </label>
         <label class="f"><span>الكمية *</span><input id="m-qty" data-f="mqty" type="number" step="any" min="0" placeholder="0" value="${esc(F.mqty||'')}"></label>
         <label class="f"><span>ملاحظات</span><input id="m-notes" data-f="mnotes" data-live="1" placeholder="اختياري" value="${esc(F.mnotes||'')}"></label>
@@ -1055,6 +1061,8 @@ function bind(){
           if(i){F.mid=i.id;F.mq=i.name;render();}
           break}
         case 'addmove':{
+          if(el.dataset.type==='in'&&F.mid&&it(F.mid)){const pr=pendFor(it(F.mid));
+            if(pr.length&&!confirm(`«${it(F.mid).name}» له توريد معلّق من المشتريات (${pr.map(r=>fmt(r.qty)+' '+r.unit).join('، ')}).\n\nلو هي نفس البضاعة، ألغِ وأكّدها من «توريدات واردة» عشان ما تنحسب مرتين.\n\nهل هذا وارد ثاني مختلف وتبي تسجّله يدوي؟`))return}
           const type=el.dataset.type, iid=F.mid, q=n(F.mqty);
           if(!iid)return toast('اختر الصنف من نتائج البحث أولاً.','bad');
           if(q<=0)return toast('أدخل كمية أكبر من صفر.','bad');
