@@ -187,12 +187,12 @@ const KEY='inventory-simple-v1';
 const UNITS=['حبة','درزن','كرتون','كيلو','صندوق','علبة','باقة','متر','لتر','طقم'];
 const BRANCHES=['الفرع الرئيسي','فرع الرياض'];
 /* من يرى كل الفروع، ومين مقيّد بفرع معيّن — عدّل هالقائمة من كود الملف عند إضافة موظف جديد */
-/* confirm: يقدر يأكد استلام التوريدات (يوسف للرئيسي، وأحمد للرياض). الإدارة لها كل الصلاحيات */
+/* confirm: يقدر يأكد استلام التوريدات (يوسف للرئيسي، وأحمد للرياض). count: يقدر يسوي جرد. الإدارة لها كل الصلاحيات */
 const ACCESS_MAP={
   'algobiry2016@gmail.com':{branch:'all',name:'رؤوف'},
   'dm.flowers11@gmail.com':{branch:'all',name:'سعود'},
   'ahmeddmflowers@gmail.com':{branch:'فرع الرياض',name:'أحمد',confirm:true},
-  'demployee93@gmail.com':{branch:'الفرع الرئيسي',name:'يوسف',confirm:true},
+  'demployee93@gmail.com':{branch:'الفرع الرئيسي',name:'يوسف',confirm:true,count:true},
   'ashrfmohamed787@gmail.com':{branch:'الفرع الرئيسي',name:'أشرف'}
 };
 /* دخول الجوال (شروق): نفس طريقة نظام الشوكولاتة — الرقم يتحوّل لإيميل بهالنطاق. ما نكتب أي رقم جوال بالكود */
@@ -207,6 +207,7 @@ let CUR_EMAIL=null, CUR_BRANCH=null, CUR_ALL=false, VIEW=null;
 const access=email=>{const e=(email||'').toLowerCase();return ACCESS_MAP[e]||(e.endsWith(PHONE_DOMAIN)?PHONE_ACCESS:null)};
 const nameOf=email=>(access(email)||{}).name||String(email||'').split('@')[0]||'—';
 /* تأكيد الاستلام: الإدارة (كل الصلاحيات)، ويوسف لتوريدات الفرع الرئيسي، وأحمد لتوريدات الرياض */
+const canCount=()=>{const a=access(CUR_EMAIL);return !!(a&&(a.branch==='all'||a.count))};
 const canConfirm=r=>{const a=access(CUR_EMAIL);return !!(a&&(a.branch==='all'||(a.confirm&&(r.branch||DEFAULT_BRANCH)===a.branch)))};
 /* سجل تعديلات الموظفين — يظهر للإدارة كتنبيهات. الكتابة صامتة: لو فشلت ما توقف شغل الموظف */
 let AUDIT=[];
@@ -458,7 +459,7 @@ function vOpen(){
         <td>${arch?`<div class="btnrow">
             <button class="btn ghost sm" data-a="restoreitem" data-id="${i.id}">استرجاع</button>
             ${!used?`<button class="btn ghost sm danger" data-a="delitemhard" data-id="${i.id}">حذف نهائي</button>`:''}
-          </div>`:`<div class="btnrow">${CUR_ALL?`<button class="btn ghost sm" data-a="count" data-id="${i.id}">جرد</button>`:''}<button class="btn ghost sm" data-a="delitem" data-id="${i.id}">أرشفة</button></div>`}</td></tr>
+          </div>`:`<div class="btnrow">${canCount()?`<button class="btn ghost sm" data-a="count" data-id="${i.id}">جرد</button>`:''}<button class="btn ghost sm" data-a="delitem" data-id="${i.id}">أرشفة</button></div>`}</td></tr>
         ${F.bd===i.id?`<tr class="detail"><td colspan="${VIEW==='all'?9:8}">${balDetail(i)}</td></tr>`:''}`}).join('')}</tbody>
       <tfoot><tr><td colspan="${VIEW==='all'?4:3}">الإجمالي</td><td class="num">${fmt(list.reduce((a,i)=>a+n(i.opening),0))}</td><td></td>
         <td class="num">${fmt(list.reduce((a,i)=>a+bal(i.id),0))}</td><td colspan="2"></td></tr></tfoot></table>`
@@ -1016,8 +1017,8 @@ function bind(){
           list.forEach(r=>{const mv={id:uid(),type:'in',date:r.x.date,no:'تسوية',party:'تسوية جرد',itemId:r.i.id,qty:r.x.qty,notes:'تسوية رصيد — '+why.trim(),by:CUR_EMAIL||''};
             DB.moves.push(mv);upd[`moves/${mv.id}`]=mv});
           fbWrite(upd);render();toast(`تمت تسوية ${list.length} صنف — الأرصدة مضبوطة الحين.`);break}
-        case 'count':{  // جرد صنف واحد: الإدارة تكتب العدد الفعلي والنظام يضبط الرصيد عليه
-          if(!CUR_ALL)break;
+        case 'count':{  // جرد صنف واحد: الإدارة ويوسف يكتبون العدد الفعلي والنظام يضبط الرصيد عليه
+          if(!canCount())break;
           const i=it(el.dataset.id);if(!i)break;const b=bal(i.id);
           const v=prompt(`جرد «${i.name}»\nالرصيد بالنظام: ${fmt(b)} ${i.unit}\n\nكم العدد الفعلي الموجود بالمخزن؟`);
           if(v===null)return;const act=Number(String(v).trim().replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
@@ -1027,6 +1028,7 @@ function bind(){
           if(why===null)return;if(!why.trim())return toast('اكتب سبب التعديل.','bad');
           const mv={id:uid(),type:diff>0?'in':'out',date:today(),no:'تسوية',party:'تسوية جرد',itemId:i.id,qty:Math.abs(diff),
             notes:`جرد: النظام ${fmt(b)} والفعلي ${fmt(act)} — ${why.trim()}`,by:CUR_EMAIL||''};
+          audit('جرد',i.name,`النظام ${fmt(b)} والفعلي ${fmt(act)} ${i.unit} (${diff>0?'+':''}${fmt(diff)}) — ${why.trim()}`);
           DB.moves.push(mv);saveMove(mv);render();toast(`تم الجرد — رصيد ${i.name} صار ${fmt(act)} ${i.unit}.`);break}
         case 'rcopen':{const r=rcById(el.dataset.id);if(r&&canConfirm(r)){rcOpen(r);render()}break}
         case 'rcclose':{RC_KEYS.forEach(k=>delete F[k]);render();break}
