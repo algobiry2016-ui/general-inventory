@@ -296,6 +296,21 @@ function negInfo(id){
 /* تعديل وحذف الحركات اليدوية للكل؛ حركات توريد المشتريات والتسوية للإدارة فقط
    (تعديلها يفك ربطها بالمشتريات أو يلخبط الجرد) */
 const canEditMove=m=>CUR_ALL||(!m.receiptId&&!isAdj(m));
+/* تفصيل رصيد صنف: افتتاحي + توريدات مشتريات + وارد يدوي − منصرف − تالف ± جرد، مع كل حركاته */
+function balDetail(i){
+  const mv=DB.moves.filter(m=>m.itemId===i.id).sort((a,b)=>b.date.localeCompare(a.date));
+  const S=f=>mv.filter(f).reduce((a,m)=>a+n(m.qty),0);
+  const rc=S(m=>m.type==='in'&&m.receiptId&&!isAdj(m)), man=S(m=>m.type==='in'&&!m.receiptId&&!isAdj(m));
+  const out=S(m=>m.type==='out'&&!isAdj(m)), dm=S(m=>m.type==='damage'), adj=S(m=>isAdj(m)&&m.type==='in')-S(m=>isAdj(m)&&m.type!=='in');
+  const src=m=>isAdj(m)?'تسوية جرد':m.receiptId?(String(m.receiptId).startsWith('choco_')?'من الشوكولاتة':'توريد مشتريات'):'يدوي';
+  const T={in:'وارد',out:'منصرف',damage:'تالف'};
+  return `<div style="font-size:13.5px;color:var(--txt);font-weight:600;margin:4px 0 8px">
+    افتتاحي ${fmt(i.opening)} + توريدات مشتريات ${fmt(rc)} + وارد يدوي ${fmt(man)} − منصرف ${fmt(out)} − تالف ${fmt(dm)}${adj?` ${adj>0?'+':'−'} جرد ${fmt(Math.abs(adj))}`:''} = <b>${fmt(bal(i.id))} ${esc(i.unit)}</b></div>
+    ${mv.length?`<table style="margin:0"><thead><tr><th>التاريخ</th><th>النوع</th><th class="num">الكمية</th><th>المصدر</th><th>رقم / جهة</th><th>ملاحظات</th><th>أضافها</th></tr></thead>
+    <tbody>${mv.map(m=>`<tr><td>${dH(m.date)}</td><td>${T[m.type]||m.type}</td><td class="num">${fmt(m.qty)}</td><td>${src(m)}</td>
+      <td class="wrap">${esc([m.no,m.party].filter(Boolean).join(' — '))||'—'}</td><td class="wrap">${esc(m.notes)||'—'}</td><td>${esc((m.by||'').split('@')[0])||'—'}</td></tr>`).join('')}</tbody></table>`
+    :'<div class="note">ما فيه حركات — الرصيد هو الافتتاحي.</div>'}`;
+}
 /* حركات التسوية والجرد تضبط الرصيد بس — ما تنحسب صرف ولا وارد بالتقارير */
 /* توريدات المشتريات المعلّقة اللي تخص الصنف: بنفس اسمه، أو مربوطة فيه من قبل (توزيع ألوان/أقسام) */
 const pendFor=i=>RC.filter(r=>r&&r.id&&r.status==='pending'&&(r.branch||DEFAULT_BRANCH)===(i.branch||DEFAULT_BRANCH)&&
@@ -424,12 +439,13 @@ function vOpen(){
         <td><input list="units-list" data-unit="${i.id}" value="${esc(i.unit)}" style="min-width:80px" ${arch?'disabled':''}></td>
         <td><input type="number" step="any" min="0" data-op="${i.id}" value="${n(i.opening)}" ${arch?'disabled':''}></td>
         <td><input type="number" step="any" min="0" data-mn="${i.id}" value="${n(i.min)}" ${arch?'disabled':''}></td>
-        <td class="num" style="font-size:15px">${fmt(b)}</td>
+        <td class="num" style="font-size:15px"><button class="btn ghost sm" data-a="baldet" data-id="${i.id}" title="تفصيل الرصيد" style="font-size:15px;font-weight:700;text-decoration:underline dotted">${fmt(b)}</button></td>
         <td>${arch?'—':`<span class="tag ${s.k}">${s.t}</span>`}</td>
         <td>${arch?`<div class="btnrow">
             <button class="btn ghost sm" data-a="restoreitem" data-id="${i.id}">استرجاع</button>
             ${!used?`<button class="btn ghost sm danger" data-a="delitemhard" data-id="${i.id}">حذف نهائي</button>`:''}
-          </div>`:`<div class="btnrow">${CUR_ALL?`<button class="btn ghost sm" data-a="count" data-id="${i.id}">جرد</button>`:''}<button class="btn ghost sm" data-a="delitem" data-id="${i.id}">أرشفة</button></div>`}</td></tr>`}).join('')}</tbody>
+          </div>`:`<div class="btnrow">${CUR_ALL?`<button class="btn ghost sm" data-a="count" data-id="${i.id}">جرد</button>`:''}<button class="btn ghost sm" data-a="delitem" data-id="${i.id}">أرشفة</button></div>`}</td></tr>
+        ${F.bd===i.id?`<tr class="detail"><td colspan="${VIEW==='all'?9:8}">${balDetail(i)}</td></tr>`:''}`}).join('')}</tbody>
       <tfoot><tr><td colspan="${VIEW==='all'?4:3}">الإجمالي</td><td class="num">${fmt(list.reduce((a,i)=>a+n(i.opening),0))}</td><td></td>
         <td class="num">${fmt(list.reduce((a,i)=>a+bal(i.id),0))}</td><td colspan="2"></td></tr></tfoot></table>`
     :`<div class="empty"><strong>${q?'لا يوجد صنف مطابق للبحث':(F.showArch?'لا توجد أصناف مؤرشفة':'لا توجد أصناف بعد')}</strong>${q?'جرّب كلمة أخرى.':(F.showArch?'':'أضف أول صنف من النموذج بالأعلى.')}</div>`}
@@ -783,7 +799,7 @@ function vRcv(){
         <td>${stTag(r)}</td>
         <td class="wrap" style="font-size:12.5px">${r.status==='confirmed'?partsTxt(r):'—'}</td>
         <td style="font-size:11.5px;color:var(--txt2)">${esc(r.confirmedBy||r.rejectedBy||'')||'—'}</td>
-        <td class="wrap" style="font-size:12.5px;color:var(--txt2)">${esc(r.note||r.cancelReason||'')||'—'}${CUR_ALL&&r.invoiceChanged?`<div style="color:var(--red);font-weight:700;margin-top:3px">⚠ ${esc(r.invoiceChanged)}</div>`:''}</td>
+        <td class="wrap" style="font-size:12.5px;color:var(--txt2)">${esc(r.note||r.cancelReason||'')||'—'}${r.invoiceChanged?`<div style="color:var(--red);font-weight:700;margin-top:3px">⚠ ${esc(r.invoiceChanged)}</div>`:''}</td>
         ${CUR_ALL?`<td><button class="btn ghost sm" data-a="rchide" data-id="${r.id}">حذف من السجل</button></td>`:''}
       </tr>`).join('')}</tbody></table>`
     :`<div class="empty"><strong>لا يوجد سجل بعد</strong>التوريدات المؤكدة والمرفوضة تظهر هنا.</div>`}
@@ -863,6 +879,10 @@ async function rcConfirm(){
   const split=F.rmode==='split';
   if(split&&!parts.length)return toast('أضف صنف واحد على الأقل (مثلًا اللون).','bad');
   if(Math.abs(rq-n(r.qty))>1e-9&&!note)return toast('المستلم يختلف عن الفاتورة — اكتب ملاحظة بالسبب.','bad');
+  const twin=RC.filter(x=>x&&x.id!==r.id&&x.status==='confirmed'&&String(x.invoiceNo||'')===String(r.invoiceNo||'')&&String(x.invoiceNo||'')
+    &&normName(x.supplier)===normName(r.supplier)&&sameName(x.name,r.name)&&(x.branch||DEFAULT_BRANCH)===(r.branch||DEFAULT_BRANCH));
+  if(twin.length&&!confirm(`تنبيه: «${r.name}» من فاتورة ${r.invoiceNo} (${r.supplier}) انستلم قبل:\n`+twin.map(x=>`• ${fmtTime(x.confirmedAt)} — ${fmt(x.receivedQty)} ${x.unit||''}`).join('\n')
+    +'\n\nلو هي نفس البضاعة (الفاتورة انعاد إدخالها) اضغط إلغاء وارفض التوريد، عشان ما تنحسب مرتين.\n\nهل هذي بضاعة ثانية فعلًا وتبي تأكدها؟'))return;
   for(const p of parts){const i=it(p.itemId);if(!i||i.archived)return toast('فيه صنف محذوف أو مؤرشف بالقائمة — أزله.','bad');}
   const tot=R3(rq*rf);
   const upd={};
@@ -969,6 +989,7 @@ function bind(){
       switch(a){
         case 'goopen':go('open');break;
         case 'gorcv':go('rcv');break;
+        case 'baldet':{F.bd=F.bd===el.dataset.id?null:el.dataset.id;render();break}
         case 'fixneg':{  // تسوية جرد للأصناف اللي نزل رصيدها تحت الصفر — للإدارة فقط
           if(!CUR_ALL)break;
           const list=negItems();if(!list.length)break;
