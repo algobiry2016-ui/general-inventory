@@ -187,7 +187,7 @@ const KEY='inventory-simple-v1';
 const UNITS=['حبة','درزن','كرتون','كيلو','صندوق','علبة','باقة','متر','لتر','طقم'];
 const BRANCHES=['الفرع الرئيسي','فرع الرياض'];
 /* من يرى كل الفروع، ومين مقيّد بفرع معيّن — عدّل هالقائمة من كود الملف عند إضافة موظف جديد */
-/* confirm: يقدر يأكد استلام التوريدات (يوسف للرئيسي، وأحمد للرياض). الإدارة تشوف ولا تأكد */
+/* confirm: يقدر يأكد استلام التوريدات (يوسف للرئيسي، وأحمد للرياض). الإدارة لها كل الصلاحيات */
 const ACCESS_MAP={
   'algobiry2016@gmail.com':{branch:'all',name:'رؤوف'},
   'dm.flowers11@gmail.com':{branch:'all',name:'سعود'},
@@ -206,8 +206,8 @@ let noStore=false;
 let CUR_EMAIL=null, CUR_BRANCH=null, CUR_ALL=false, VIEW=null;
 const access=email=>{const e=(email||'').toLowerCase();return ACCESS_MAP[e]||(e.endsWith(PHONE_DOMAIN)?PHONE_ACCESS:null)};
 const nameOf=email=>(access(email)||{}).name||String(email||'').split('@')[0]||'—';
-/* تأكيد الاستلام: يوسف لتوريدات الفرع الرئيسي، وأحمد لتوريدات الرياض */
-const canConfirm=r=>{const a=access(CUR_EMAIL);return !!(a&&a.confirm&&(r.branch||DEFAULT_BRANCH)===a.branch)};
+/* تأكيد الاستلام: الإدارة (كل الصلاحيات)، ويوسف لتوريدات الفرع الرئيسي، وأحمد لتوريدات الرياض */
+const canConfirm=r=>{const a=access(CUR_EMAIL);return !!(a&&(a.branch==='all'||(a.confirm&&(r.branch||DEFAULT_BRANCH)===a.branch)))};
 /* سجل تعديلات الموظفين — يظهر للإدارة كتنبيهات. الكتابة صامتة: لو فشلت ما توقف شغل الموظف */
 let AUDIT=[];
 function audit(action,item,details){
@@ -887,7 +887,7 @@ function rcForm(r){
 
 async function rcConfirm(){
   const r=rcById(F.rid);
-  if(r&&!canConfirm(r))return toast('تأكيد الاستلام من صلاحية مسؤول المخزون (يوسف، وأحمد للرياض).','bad');
+  if(r&&!canConfirm(r))return toast('تأكيد الاستلام من صلاحية مسؤول المخزون (يوسف، وأحمد للرياض) والإدارة.','bad');
   if(!r||r.status!=='pending')return toast('هذا التوريد ما عاد معلّق — يمكن أحد أكّده.','bad');
   const rq=n(F.rq), rf=n(F.rf), parts=(F.rparts||[]).slice(), note=(F.rnote||'').trim();
   if(rq<=0)return toast('الكمية المستلمة لازم أكبر من صفر — لو ما وصل شي استخدم «رفض».','bad');
@@ -951,7 +951,7 @@ async function rcConfirm(){
 
 async function rcReject(){
   const r=rcById(F.rid);
-  if(r&&!canConfirm(r))return toast('رفض التوريد من صلاحية مسؤول المخزون (يوسف، وأحمد للرياض).','bad');
+  if(r&&!canConfirm(r))return toast('رفض التوريد من صلاحية مسؤول المخزون (يوسف، وأحمد للرياض) والإدارة.','bad');
   if(!r||r.status!=='pending')return toast('هذا التوريد ما عاد معلّق.','bad');
   const note=(F.rnote||'').trim();
   if(!note)return toast('اكتب سبب الرفض بخانة الملاحظة.','bad');
