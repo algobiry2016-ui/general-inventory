@@ -155,7 +155,7 @@ select.badge-branch{border:none;appearance:none;-webkit-appearance:none;-moz-app
     <div class="card-b">
       <p style="color:var(--txt2);font-size:12.5px;margin:0 0 14px">نظام المخزون — دوكمنتيشن فلاورز</p>
       <div class="grid" style="gap:10px">
-        <label class="f"><span>البريد الإلكتروني</span><input id="lg-email" type="email" autocomplete="username" placeholder="name@email.com"></label>
+        <label class="f"><span>البريد الإلكتروني أو رقم الجوال</span><input id="lg-email" type="text" autocomplete="username" placeholder="name@email.com أو 05xxxxxxxx"></label>
         <label class="f"><span>كلمة المرور</span><input id="lg-pass" type="password" autocomplete="current-password" placeholder="••••••••"></label>
       </div>
       <div class="btnrow" style="margin-top:14px"><button class="btn primary" id="lg-btn" style="width:100%">دخول</button></div>
@@ -170,6 +170,7 @@ select.badge-branch{border:none;appearance:none;-webkit-appearance:none;-moz-app
     <div style="font-size:11px;color:#7E9E9B;letter-spacing:.5px;margin-top:1px">Documentation Flowers</div>
     <small id="sync-status">كميات فقط — بدون أي أسعار أو حسابات مالية</small>
     <div class="topbtns">
+      <button class="icobtn" id="btn-audit" style="display:none">🔔 التنبيهات</button>
       <button class="icobtn" id="btn-settings">⚙️ الإعدادات</button>
       <button class="icobtn" id="btn-logout">خروج</button>
     </div>
@@ -186,21 +187,34 @@ const KEY='inventory-simple-v1';
 const UNITS=['حبة','درزن','كرتون','كيلو','صندوق','علبة','باقة','متر','لتر','طقم'];
 const BRANCHES=['الفرع الرئيسي','فرع الرياض'];
 /* من يرى كل الفروع، ومين مقيّد بفرع معيّن — عدّل هالقائمة من كود الملف عند إضافة موظف جديد */
+/* confirm: يقدر يأكد استلام التوريدات (يوسف للرئيسي، وأحمد للرياض). الإدارة تشوف ولا تأكد */
 const ACCESS_MAP={
-  'algobiry2016@gmail.com':{branch:'all'},
-  'dm.flowers11@gmail.com':{branch:'all'},
-  'ahmeddmflowers@gmail.com':{branch:'فرع الرياض'},
-  'demployee93@gmail.com':{branch:'الفرع الرئيسي'}
+  'algobiry2016@gmail.com':{branch:'all',name:'رؤوف'},
+  'dm.flowers11@gmail.com':{branch:'all',name:'سعود'},
+  'ahmeddmflowers@gmail.com':{branch:'فرع الرياض',name:'أحمد',confirm:true},
+  'demployee93@gmail.com':{branch:'الفرع الرئيسي',name:'يوسف',confirm:true},
+  'ashrfmohamed787@gmail.com':{branch:'الفرع الرئيسي',name:'أشرف'}
 };
+/* دخول الجوال (شروق): نفس طريقة نظام الشوكولاتة — الرقم يتحوّل لإيميل بهالنطاق. ما نكتب أي رقم جوال بالكود */
+const PHONE_DOMAIN='@phone.dmflowers.sa';
+const PHONE_ACCESS={branch:'الفرع الرئيسي',name:'شروق'};
 const DEFAULT_BRANCH='الفرع الرئيسي'; // فرع الأصناف القديمة اللي ما لها فرع محدد — أي بريد غير مذكور أعلاه ما يدخل النظام
 let RC=[], RMAP={};                   // التوريدات الواردة من المشتريات + ذاكرة ربط أصنافها
-/* حسابات المشتريات فقط — ما تدخل نظام المخزون (حسابها موجود بس عشان إرسال التوريدات) */
-const PURCHASE_ONLY=['ashrfmohamed787@gmail.com'];
 let DB={items:[],moves:[]};           // items: {..., branch}; moves: {id,type:'in'|'out'|'damage',date,no,party,itemId,qty,notes,by}
 let V='open', F={};
 let noStore=false;
 let CUR_EMAIL=null, CUR_BRANCH=null, CUR_ALL=false, VIEW=null;
-const access=email=>ACCESS_MAP[(email||'').toLowerCase()]||null;
+const access=email=>{const e=(email||'').toLowerCase();return ACCESS_MAP[e]||(e.endsWith(PHONE_DOMAIN)?PHONE_ACCESS:null)};
+const nameOf=email=>(access(email)||{}).name||String(email||'').split('@')[0]||'—';
+/* تأكيد الاستلام: يوسف لتوريدات الفرع الرئيسي، وأحمد لتوريدات الرياض */
+const canConfirm=r=>{const a=access(CUR_EMAIL);return !!(a&&a.confirm&&(r.branch||DEFAULT_BRANCH)===a.branch)};
+/* سجل تعديلات الموظفين — يظهر للإدارة كتنبيهات. الكتابة صامتة: لو فشلت ما توقف شغل الموظف */
+let AUDIT=[];
+function audit(action,item,details){
+  if(CUR_ALL||!fbRef)return;
+  const id=uid();
+  fbRef.child('auditLog/'+id).set({id,at:Date.now(),by:CUR_EMAIL||'',who:nameOf(CUR_EMAIL),action,item:item||'',details:details||''}).catch(()=>{});
+}
 /* الأصناف/الحركات المرئية حسب الفرع المختار حاليًا للعرض (VIEW) */
 const visItems=()=>VIEW==='all'?DB.items:DB.items.filter(i=>(i.branch||DEFAULT_BRANCH)===VIEW);
 const activeItems=()=>visItems().filter(i=>!i.archived);
@@ -815,7 +829,8 @@ function rcRow(r){
         <div class="rc-name">${esc(r.name)} <span class="rc-qty">${fmt(r.qty)} ${esc(r.unit)}</span>${VIEW==='all'?` <span class="badge-branch">${esc(r.branch)}</span>`:''}</div>
         <div class="rc-meta">فاتورة ${esc(r.invoiceNo)||'—'} · ${esc(r.supplier)||'—'} · ${dH(r.invoiceDate)} · أدخلها ${esc(r.createdBy)||'—'}</div>
       </div>
-      ${open?'':`<button class="btn primary sm" data-a="rcopen" data-id="${r.id}">استلام</button>`}
+      ${open?'':canConfirm(r)?`<button class="btn primary sm" data-a="rcopen" data-id="${r.id}">استلام</button>`
+        :`<span class="tag low">بانتظار ${(r.branch||DEFAULT_BRANCH)==='فرع الرياض'?'أحمد':'يوسف'}</span>`}
     </div>
     ${open?rcForm(r):''}
   </div>`;
@@ -872,6 +887,7 @@ function rcForm(r){
 
 async function rcConfirm(){
   const r=rcById(F.rid);
+  if(r&&!canConfirm(r))return toast('تأكيد الاستلام من صلاحية مسؤول المخزون (يوسف، وأحمد للرياض).','bad');
   if(!r||r.status!=='pending')return toast('هذا التوريد ما عاد معلّق — يمكن أحد أكّده.','bad');
   const rq=n(F.rq), rf=n(F.rf), parts=(F.rparts||[]).slice(), note=(F.rnote||'').trim();
   if(rq<=0)return toast('الكمية المستلمة لازم أكبر من صفر — لو ما وصل شي استخدم «رفض».','bad');
@@ -935,6 +951,7 @@ async function rcConfirm(){
 
 async function rcReject(){
   const r=rcById(F.rid);
+  if(r&&!canConfirm(r))return toast('رفض التوريد من صلاحية مسؤول المخزون (يوسف، وأحمد للرياض).','bad');
   if(!r||r.status!=='pending')return toast('هذا التوريد ما عاد معلّق.','bad');
   const note=(F.rnote||'').trim();
   if(!note)return toast('اكتب سبب الرفض بخانة الملاحظة.','bad');
@@ -1011,7 +1028,7 @@ function bind(){
           const mv={id:uid(),type:diff>0?'in':'out',date:today(),no:'تسوية',party:'تسوية جرد',itemId:i.id,qty:Math.abs(diff),
             notes:`جرد: النظام ${fmt(b)} والفعلي ${fmt(act)} — ${why.trim()}`,by:CUR_EMAIL||''};
           DB.moves.push(mv);saveMove(mv);render();toast(`تم الجرد — رصيد ${i.name} صار ${fmt(act)} ${i.unit}.`);break}
-        case 'rcopen':{const r=rcById(el.dataset.id);if(r){rcOpen(r);render()}break}
+        case 'rcopen':{const r=rcById(el.dataset.id);if(r&&canConfirm(r)){rcOpen(r);render()}break}
         case 'rcclose':{RC_KEYS.forEach(k=>delete F[k]);render();break}
         case 'rcsplit':{F.rmode='split';F.rparts=[];F.rsq=(rcById(F.rid)||{}).name?rcById(F.rid).name+' ':'';render();const s=document.getElementById('rc-s');if(s){s.focus();s.setSelectionRange(s.value.length,s.value.length)}break}
         case 'rchide':{
@@ -1050,25 +1067,28 @@ function bind(){
             if(DB.items.some(o=>o.id!==i.id&&sameName(o.name,v)&&(o.branch||DEFAULT_BRANCH)===br&&!o.archived)){
               toast(`الاسم «${v}» مستخدم بصنف آخر بنفس الفرع — تم تجاهل هذا التعديل.`,'bad');x.value=i.name;nameErr=true;return;
             }
+            audit('تعديل اسم صنف',i.name,`${i.name} ← ${v}`);
             i.name=v;saveItemFields(i.id,{name:v});
           });
           R.querySelectorAll('[data-op]').forEach(x=>{const i=it(x.dataset.op);if(i){const v=n(x.value);if(v!==n(i.opening)){
             const after=minBalFrom(i.id,'0000-00-00')-n(i.opening)+v;
             if(after<-1e-9){toast(`«${i.name}»: الافتتاحي ${fmt(v)} أقل من اللي انصرف — يخلّي الرصيد سالب. تم تجاهل هذا التعديل.`,'bad');x.value=n(i.opening);nameErr=true;return}
+            audit('تعديل الرصيد الافتتاحي',i.name,`${fmt(i.opening)} ← ${fmt(v)}`);
             i.opening=v;saveItemFields(i.id,{opening:v})}}});
-          R.querySelectorAll('[data-mn]').forEach(x=>{const i=it(x.dataset.mn);if(i){const v=n(x.value);if(v!==i.min){i.min=v;saveItemFields(i.id,{min:v})}}});
-          R.querySelectorAll('[data-cat]').forEach(x=>{const i=it(x.dataset.cat);if(i){const v=x.value.trim();if(v!==(i.category||'')){i.category=v;saveItemFields(i.id,{category:v})}}});
-          R.querySelectorAll('[data-unit]').forEach(x=>{const i=it(x.dataset.unit);if(i&&x.value.trim()){const v=x.value.trim();if(v!==i.unit){i.unit=v;saveItemFields(i.id,{unit:v})}}});
+          R.querySelectorAll('[data-mn]').forEach(x=>{const i=it(x.dataset.mn);if(i){const v=n(x.value);if(v!==i.min){audit('تعديل الحد الأدنى',i.name,`${fmt(i.min)} ← ${fmt(v)}`);i.min=v;saveItemFields(i.id,{min:v})}}});
+          R.querySelectorAll('[data-cat]').forEach(x=>{const i=it(x.dataset.cat);if(i){const v=x.value.trim();if(v!==(i.category||'')){audit('تعديل التصنيف',i.name,`${i.category||'—'} ← ${v||'—'}`);i.category=v;saveItemFields(i.id,{category:v})}}});
+          R.querySelectorAll('[data-unit]').forEach(x=>{const i=it(x.dataset.unit);if(i&&x.value.trim()){const v=x.value.trim();if(v!==i.unit){audit('تعديل الوحدة',i.name,`${i.unit} ← ${v}`);i.unit=v;saveItemFields(i.id,{unit:v})}}});
           render();if(!nameErr)toast('تم الحفظ وتحديث الأرصدة.');break}
         case 'delitem':{
           const id=el.dataset.id,i=it(id);
           if(!confirm(`أرشفة الصنف «${i.name}»؟ سجلاته وتقاريره تبقى محفوظة، وتقدر تسترجعه لاحقًا من "عرض الأصناف المؤرشفة".`))return;
+          audit('أرشفة صنف',i.name,`الرصيد وقت الأرشفة ${fmt(bal(i.id))} ${i.unit}`);
           i.archived=true;i.archivedAt=today();i.archivedBy=CUR_EMAIL||'';
           saveItemFields(id,{archived:true,archivedAt:i.archivedAt,archivedBy:i.archivedBy});
           render();toast('تم أرشفة الصنف.');break}
         case 'restoreitem':{
           const id=el.dataset.id,i=it(id);
-          if(i){delete i.archived;delete i.archivedAt;delete i.archivedBy;
+          if(i){audit('استرجاع صنف من الأرشيف',i.name,'');delete i.archived;delete i.archivedAt;delete i.archivedBy;
             saveItemFields(id,{archived:null,archivedAt:null,archivedBy:null});render();toast('تم استرجاع الصنف.');}
           break}
         case 'delitemhard':{
@@ -1112,6 +1132,8 @@ function bind(){
           if(mvx&&mvx.type==='in'&&minBalFrom(mvx.itemId,mvx.date)-n(mvx.qty)<-1e-9)
             return toast(`ما ينفع تحذف هذا الوارد — انصرف منه، وحذفه يخلّي رصيد «${(it(mvx.itemId)||{}).name}» سالب. احذف المنصرف الغلط أول.`,'bad');
           if(!confirm(mvx&&mvx.receiptId?'هذي الحركة جاية من توريد مشتريات مؤكد. حذفها يخصم الكمية من الرصيد لكن التوريد يظل «مستلم» عند المشتريات. متابعة؟':'حذف هذه العملية؟ سيُعاد حساب الرصيد تلقائيًا.'))return;
+          {const T={in:'وارد',out:'منصرف',damage:'تالف'},i=it(mvx.itemId)||{};
+            audit('حذف حركة',i.name,`${T[mvx.type]||mvx.type} ${fmt(mvx.qty)} ${i.unit||''} بتاريخ ${dH(mvx.date)}${mvx.party?' — '+mvx.party:''}`)}
           DB.moves=DB.moves.filter(m=>m.id!==mid);deleteMoveRemote(mid);render();toast('تم الحذف وتحديث الرصيد.');break}
         case 'editmove':{
           const m=DB.moves.find(x=>x.id===el.dataset.id);if(!m||!canEditMove(m))break;
@@ -1129,6 +1151,13 @@ function bind(){
           DB.moves[idx]=upd;
           const from=d<old.date?d:old.date, ok=minBalFrom(old.itemId,from)>=-1e-9;
           if(!ok){DB.moves[idx]=old;return toast(`التعديل يخلّي رصيد «${(it(old.itemId)||{}).name}» سالب — راجع الكمية أو التاريخ.`,'bad')}
+          {const T={in:'وارد',out:'منصرف',damage:'تالف'},i=it(old.itemId)||{},ch=[];
+            if(old.date!==upd.date)ch.push(`التاريخ ${dH(old.date)} ← ${dH(upd.date)}`);
+            if(n(old.qty)!==n(upd.qty))ch.push(`الكمية ${fmt(old.qty)} ← ${fmt(upd.qty)}`);
+            if((old.party||'')!==upd.party)ch.push(`الجهة ${old.party||'—'} ← ${upd.party||'—'}`);
+            if((old.no||'')!==upd.no)ch.push(`الرقم ${old.no||'—'} ← ${upd.no||'—'}`);
+            if((old.notes||'')!==upd.notes)ch.push('الملاحظات');
+            if(ch.length)audit(`تعديل حركة ${T[old.type]||old.type}`,i.name,ch.join('، '))}
           ['medit','edate','eno','eparty','eqty','enotes'].forEach(k=>delete F[k]);
           saveMove(upd);render();toast('تم التعديل وتحديث الرصيد.');break}
         case 'toggle':{const k=+el.dataset.k;F.open=F.open===k?null:k;render();break}
@@ -1274,6 +1303,7 @@ async function startSync(){
       rcFirst=false;
     }, ()=>{});
     fbRef.child('receiptMaps').on('value', snap=>{RMAP=snap.val()||{}}, ()=>{});
+    if(CUR_ALL)fbRef.child('auditLog').limitToLast(300).on('value', snap=>{AUDIT=snap.val()?Object.values(snap.val()):[];paintAudit()}, ()=>{});
   }else{
     try{const raw=localStorage.getItem(KEY);
       if(raw){const d=JSON.parse(raw);DB.items=d.items||[];DB.moves=d.moves||[];render()}}catch(e){}
@@ -1283,7 +1313,15 @@ async function startSync(){
   }
 }
 $('#lg-btn').onclick=()=>{
-  const email=$('#lg-email').value.trim(), pass=$('#lg-pass').value;
+  const raw=$('#lg-email').value.trim(), pass=$('#lg-pass').value;
+  // رقم جوال ← نفس إيميل نظام الشوكولاتة (9665xxxxxxxx@phone...)
+  let email=raw;
+  if(raw&&!raw.includes('@')){
+    let d=raw.replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/\D/g,'');
+    if(d.startsWith('00'))d=d.slice(2);
+    if(d.startsWith('05')&&d.length===10)d='966'+d.slice(1);else if(d.startsWith('5')&&d.length===9)d='966'+d;
+    email=d+PHONE_DOMAIN;
+  }
   const err=$('#lg-err');err.textContent='';
   if(!email||!pass)return err.textContent='عبّي البريد وكلمة المرور.';
   $('#lg-btn').disabled=true;
@@ -1294,14 +1332,31 @@ $('#lg-btn').onclick=()=>{
 $('#lg-pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#lg-btn').click()});
 $('#btn-logout').onclick=()=>{if(confirm('تسجيل الخروج؟'))firebase.auth().signOut();};
 $('#btn-settings').onclick=openSettings;
+/* آخر تنبيه شافه المدير — محفوظ على الجهاز */
+const AUDIT_SEEN_KEY='inv-audit-seen';
+const auditSeen=()=>{try{return +localStorage.getItem(AUDIT_SEEN_KEY)||0}catch(e){return 0}};
+function paintAudit(){
+  const b=$('#btn-audit');if(!b)return;
+  if(!CUR_ALL){b.style.display='none';return}
+  const nNew=AUDIT.filter(a=>a.at>auditSeen()).length;
+  b.style.display='';b.innerHTML=`🔔 التنبيهات${nNew?` <span class="cnt" style="display:inline-block;background:var(--amber);color:#fff;border-radius:100px;padding:0 7px;font-size:11px">${nNew}</span>`:''}`;
+}
+$('#btn-audit').onclick=()=>{
+  const box=$('#settings-modal'),seen=auditSeen();
+  const list=AUDIT.slice().sort((a,b)=>b.at-a.at).slice(0,200);
+  box.innerHTML=`<div class="modal-bg" id="au-bg"><div class="modal card" style="max-width:720px">
+    <div class="card-h"><h3>تعديلات الموظفين</h3><div class="btnrow"><button class="btn primary sm" id="au-seen">تم الاطلاع</button><button class="btn ghost sm" id="au-close">إغلاق</button></div></div>
+    ${list.length?`<div class="tblwrap"><table><thead><tr><th>الوقت</th><th>الموظف</th><th>الإجراء</th><th>الصنف</th><th>التفاصيل</th></tr></thead>
+    <tbody>${list.map(a=>`<tr style="${a.at>seen?'background:#FBF0DC':''}"><td style="font-size:12px">${fmtTime(a.at)}</td><td><b>${esc(a.who||nameOf(a.by))}</b></td>
+      <td>${esc(a.action)}</td><td class="wrap">${esc(a.item)||'—'}</td><td class="wrap" style="font-size:12.5px">${esc(a.details)||'—'}</td></tr>`).join('')}</tbody></table></div>`
+    :'<div class="empty">ما فيه تعديلات من الموظفين.</div>'}</div></div>`;
+  const close=()=>box.innerHTML='';
+  $('#au-close').onclick=close;$('#au-bg').onclick=e=>{if(e.target.id==='au-bg')close()};
+  $('#au-seen').onclick=()=>{try{localStorage.setItem(AUDIT_SEEN_KEY,String(Date.now()))}catch(e){}close();paintAudit()};
+};
 
 if(fbRef){
   firebase.auth().onAuthStateChanged(user=>{
-    if(user&&PURCHASE_ONLY.includes((user.email||'').toLowerCase())){
-      firebase.auth().signOut();
-      $('#lg-err').textContent='هذا الحساب مخصص لنظام المشتريات فقط.';
-      return;
-    }
     if(user){
       if(!access(user.email)){
         firebase.auth().signOut();
@@ -1312,12 +1367,13 @@ if(fbRef){
       VIEW=CUR_ALL?'all':CUR_BRANCH;
       $('#gate').style.display='none'; $('#app').style.display='';
       $('#lg-email').value='';$('#lg-pass').value='';
-      buildBranchWidget();
+      buildBranchWidget();paintAudit();
       if(!dbHandleBound){dbHandleBound=true;startSync();}else{render()}
     }else{
       CUR_EMAIL=null;CUR_BRANCH=null;CUR_ALL=false;VIEW=null;
       $('#gate').style.display='';$('#app').style.display='none';
-      if(fbRef){try{fbRef.child('items').off();fbRef.child('moves').off();fbRef.child('receipts').off();fbRef.child('receiptMaps').off()}catch(e){}}
+      if(fbRef){try{fbRef.child('items').off();fbRef.child('moves').off();fbRef.child('receipts').off();fbRef.child('receiptMaps').off();fbRef.child('auditLog').off()}catch(e){}}
+      AUDIT=[];paintAudit();
       dbHandleBound=false; DB={items:[],moves:[]}; RC=[]; RMAP={}; F={}; itemsFirst=true; movesFirst=true; rcFirst=true;
     }
   });
