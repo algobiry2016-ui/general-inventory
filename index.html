@@ -191,8 +191,8 @@ const BRANCHES=['الفرع الرئيسي','فرع الرياض'];
 const ACCESS_MAP={
   'algobiry2016@gmail.com':{branch:'all',name:'رؤوف'},
   'dm.flowers11@gmail.com':{branch:'all',name:'سعود'},
-  'ahmeddmflowers@gmail.com':{branch:'فرع الرياض',name:'أحمد',confirm:true},
-  'demployee93@gmail.com':{branch:'الفرع الرئيسي',name:'يوسف',confirm:true,count:true},
+  'ahmeddmflowers@gmail.com':{branch:'فرع الرياض',name:'أحمد',confirm:true,transfer:true},
+  'demployee93@gmail.com':{branch:'الفرع الرئيسي',name:'يوسف',confirm:true,count:true,transfer:true},
   'ashrfmohamed787@gmail.com':{branch:'الفرع الرئيسي',name:'أشرف'}
 };
 /* دخول الجوال (شروق): نفس طريقة نظام الشوكولاتة — الرقم يتحوّل لإيميل بهالنطاق. ما نكتب أي رقم جوال بالكود */
@@ -207,12 +207,19 @@ let CUR_EMAIL=null, CUR_BRANCH=null, CUR_ALL=false, VIEW=null;
 const access=email=>{const e=(email||'').toLowerCase();return ACCESS_MAP[e]||(e.endsWith(PHONE_DOMAIN)?PHONE_ACCESS:null)};
 const nameOf=email=>(access(email)||{}).name||String(email||'').split('@')[0]||'—';
 /* تأكيد الاستلام: الإدارة (كل الصلاحيات)، ويوسف لتوريدات الفرع الرئيسي، وأحمد لتوريدات الرياض */
+/* التحويل بين الفروع: يوسف وأحمد والإدارة */
+const canTransfer=()=>{const a=access(CUR_EMAIL);return !!(a&&(a.branch==='all'||a.transfer))};
+const BR_LABEL={'الفرع الرئيسي':'خميس مشيط','فرع الرياض':'الرياض'};
+const brName=b=>BR_LABEL[b||DEFAULT_BRANCH]||b;
+const otherBranch=b=>BRANCHES.find(x=>x!==(b||DEFAULT_BRANCH));
+/* الفرع المرسل: فرع الموظف، وللإدارة الفرع المعروض (أو اللي تختاره لو «كل الفروع») */
+const trfFrom=()=>{const a=access(CUR_EMAIL);if(a&&a.branch!=='all')return a.branch;return VIEW!=='all'?VIEW:(F.tfrom||DEFAULT_BRANCH)};
 const canCount=()=>{const a=access(CUR_EMAIL);return !!(a&&(a.branch==='all'||a.count))};
 const canConfirm=r=>{const a=access(CUR_EMAIL);return !!(a&&(a.branch==='all'||(a.confirm&&(r.branch||DEFAULT_BRANCH)===a.branch)))};
 /* سجل تعديلات الموظفين — يظهر للإدارة كتنبيهات. الكتابة صامتة: لو فشلت ما توقف شغل الموظف */
 let AUDIT=[];
-function audit(action,item,details){
-  if(CUR_ALL||!fbRef)return;
+function audit(action,item,details,always){
+  if((CUR_ALL&&!always)||!fbRef)return;
   const id=uid();
   fbRef.child('auditLog/'+id).set({id,at:Date.now(),by:CUR_EMAIL||'',who:nameOf(CUR_EMAIL),action,item:item||'',details:details||''}).catch(()=>{});
 }
@@ -310,17 +317,18 @@ function negInfo(id){
 }
 /* تعديل وحذف الحركات اليدوية للكل؛ حركات توريد المشتريات والتسوية للإدارة فقط
    (تعديلها يفك ربطها بالمشتريات أو يلخبط الجرد) */
-const canEditMove=m=>CUR_ALL||(!m.receiptId&&!isAdj(m));
+const canEditMove=m=>!m.trfId&&!m.lossOf&&(CUR_ALL||(!m.receiptId&&!isAdj(m)));
 /* تفصيل رصيد صنف: افتتاحي + توريدات مشتريات + وارد يدوي − منصرف − تالف ± جرد، مع كل حركاته */
 function balDetail(i){
   const mv=DB.moves.filter(m=>m.itemId===i.id).sort((a,b)=>b.date.localeCompare(a.date));
   const S=f=>mv.filter(f).reduce((a,m)=>a+n(m.qty),0);
-  const rc=S(m=>m.type==='in'&&m.receiptId&&!isAdj(m)), man=S(m=>m.type==='in'&&!m.receiptId&&!isAdj(m));
-  const out=S(m=>m.type==='out'&&!isAdj(m)), dm=S(m=>m.type==='damage'), adj=S(m=>isAdj(m)&&m.type==='in')-S(m=>isAdj(m)&&m.type!=='in');
-  const src=m=>isAdj(m)?'تسوية جرد':m.receiptId?(String(m.receiptId).startsWith('choco_')?'من الشوكولاتة':'توريد مشتريات'):'يدوي';
+  const rc=S(m=>m.type==='in'&&m.receiptId&&!noStat(m)), man=S(m=>m.type==='in'&&!m.receiptId&&!noStat(m));
+  const out=S(m=>m.type==='out'&&!noStat(m)), dm=S(m=>m.type==='damage'), adj=S(m=>isAdj(m)&&m.type==='in')-S(m=>isAdj(m)&&m.type!=='in');
+  const trf=S(m=>m.trfId&&m.type==='in')-S(m=>m.trfId&&m.type!=='in');
+  const src=m=>m.trfId?'تحويل':m.lossOf?'فقد بالنقل':isAdj(m)?'تسوية جرد':m.receiptId?(String(m.receiptId).startsWith('choco_')?'من الشوكولاتة':'توريد مشتريات'):'يدوي';
   const T={in:'وارد',out:'منصرف',damage:'تالف'};
   return `<div style="font-size:13.5px;color:var(--txt);font-weight:600;margin:4px 0 8px">
-    افتتاحي ${fmt(i.opening)} + توريدات مشتريات ${fmt(rc)} + وارد يدوي ${fmt(man)} − منصرف ${fmt(out)} − تالف ${fmt(dm)}${adj?` ${adj>0?'+':'−'} جرد ${fmt(Math.abs(adj))}`:''} = <b>${fmt(bal(i.id))} ${esc(i.unit)}</b></div>
+    افتتاحي ${fmt(i.opening)} + توريدات مشتريات ${fmt(rc)} + وارد يدوي ${fmt(man)} − منصرف ${fmt(out)} − تالف ${fmt(dm)}${adj?` ${adj>0?'+':'−'} جرد ${fmt(Math.abs(adj))}`:''}${trf?` ${trf>0?'+':'−'} تحويلات ${fmt(Math.abs(trf))}`:''} = <b>${fmt(bal(i.id))} ${esc(i.unit)}</b></div>
     ${mv.length?`<table style="margin:0"><thead><tr><th>التاريخ</th><th>النوع</th><th class="num">الكمية</th><th>المصدر</th><th>رقم / جهة</th><th>ملاحظات</th><th>أضافها</th></tr></thead>
     <tbody>${mv.map(m=>`<tr><td>${dH(m.date)}</td><td>${T[m.type]||m.type}</td><td class="num">${fmt(m.qty)}</td><td>${src(m)}</td>
       <td class="wrap">${esc([m.no,m.party].filter(Boolean).join(' — '))||'—'}</td><td class="wrap">${esc(m.notes)||'—'}</td><td>${esc((m.by||'').split('@')[0])||'—'}</td></tr>`).join('')}</tbody></table>`
@@ -331,6 +339,8 @@ function balDetail(i){
 const pendFor=i=>RC.filter(r=>r&&r.id&&r.status==='pending'&&(r.branch||DEFAULT_BRANCH)===(i.branch||DEFAULT_BRANCH)&&
   (sameName(r.name,i.name)||((RMAP[rcMapKey(r)]||{}).itemIds||[]).includes(i.id)));
 const isAdj=m=>m.no==='تسوية'||m.party==='تسوية جرد';
+/* التحويل بين الفروع ما ينحسب صرف ولا وارد بالتقارير (البضاعة ما خرجت من الشركة) */
+const noStat=m=>isAdj(m)||!!m.trfId;
 const negItems=()=>visItems().map(i=>({i,x:negInfo(i.id)})).filter(r=>r.x);
 /* أقل رصيد من تاريخ معيّن لين اليوم — يُستخدم للتحقق من عمليات الصرف بتاريخ قديم */
 function minBalFrom(id,d){
@@ -537,6 +547,7 @@ function vMove(){
       </div>
     </div>
   </div>
+  ${V==='out'&&canTransfer()?trfCard():''}
 
   <div class="card">
     <div class="card-h"><h3>السجل</h3><span class="sub">${rows.length} عملية — إجمالي ${fmt(total)}</span></div>
@@ -593,7 +604,7 @@ const branchOf=i=>(i&&i.branch)||DEFAULT_BRANCH;
 const unitAdd=(g,u,v)=>{if(n(v)){u=u||'—';g[u]=(g[u]||0)+n(v)}return g};
 const unitTxt=g=>Object.entries(g).filter(([,v])=>v).sort((a,b)=>b[1]-a[1]).map(([u,v])=>`${fmt(v)} ${u}`).join(' + ')||'—';
 /* مصدر الحركة: توريد من المشتريات، صادر من نظام الشوكولاتة، تسوية جرد، أو إدخال يدوي */
-const srcOf=m=>m.receiptId?(String(m.receiptId).startsWith('choco_')?'من الشوكولاتة':'توريد مشتريات'):m.no==='تسوية'?'تسوية جرد':'يدوي';
+const srcOf=m=>m.trfId?'تحويل بين الفروع':m.lossOf?'فقد بالنقل':m.receiptId?(String(m.receiptId).startsWith('choco_')?'من الشوكولاتة':'توريد مشتريات'):m.no==='تسوية'?'تسوية جرد':'يدوي';
 const TYPE_T={in:'وارد',out:'منصرف',damage:'تالف'};
 const coverTxt=c=>c==null?'—':c<1?'أقل من يوم':c>=365?'أكثر من سنة':`${Math.floor(c)} يوم`;
 
@@ -615,13 +626,14 @@ function repCompute(){
   const items=visItems().filter(i=>!cat||(i.category||'')===cat);
   const ids=new Set(items.map(i=>i.id)), byItem={};
   DB.moves.forEach(m=>{if(ids.has(m.itemId)&&m.date>=P.from&&m.date<=P.to)(byItem[m.itemId]=byItem[m.itemId]||[]).push(m)});
-  const sum=(mv,t)=>mv.reduce((a,m)=>a+(m.type===t&&!isAdj(m)?n(m.qty):0),0);
-  const cnt=(mv,t)=>mv.filter(m=>m.type===t&&!isAdj(m)).length;
+  const sum=(mv,t)=>mv.reduce((a,m)=>a+(m.type===t&&!noStat(m)?n(m.qty):0),0);
+  const cnt=(mv,t)=>mv.filter(m=>m.type===t&&!noStat(m)).length;
   const prev=dayBefore(P.from);
   const rows=items.filter(i=>byItem[i.id]).map(i=>{
     const mv=byItem[i.id], inQ=sum(mv,'in'), outQ=sum(mv,'out'), dmQ=sum(mv,'damage');
     const open=Math.max(0,bal(i.id,prev)), now=Math.max(0,bal(i.id)), avg=outQ/P.days;
-    return {i,inQ,outQ,dmQ,open,close:Math.max(0,bal(i.id,P.to)),now,outN:cnt(mv,'out'),
+    const trQ=mv.reduce((a,m)=>a+(m.trfId?(m.type==='in'?n(m.qty):-n(m.qty)):0),0);
+    return {i,inQ,outQ,dmQ,trQ,open,close:Math.max(0,bal(i.id,P.to)),now,outN:cnt(mv,'out'),
       cover:avg>0?now/avg:null};
   }).sort((a,b)=>b.outN-a.outN||b.outQ-a.outQ||a.i.name.localeCompare(b.i.name,'ar'));
   const add=f=>rows.reduce((a,r)=>a+f(r),0);
@@ -655,8 +667,8 @@ function repSections(R,full){
      head:['التصنيف','أصناف انصرفت','مرات الصرف','المنصرف','التالف'],
      body:R.catRows.map(c=>[c.cat,c.items,c.outN,unitTxt(c.outU),unitTxt(c.dmU)])}];
   if(full)S.push({key:'all',title:'تفاصيل كل الأصناف اللي تحرّكت',empty:'ما فيه حركة.',
-     head:['الصنف','التصنيف',...B,'الوحدة','أول المدة','الوارد','المنصرف','التالف','آخر المدة'],
-     body:R.rows.map(r=>[r.i.name,r.i.category||'—',...br(r.i),r.i.unit,r.open,r.inQ,r.outQ,r.dmQ,r.close])},
+     head:['الصنف','التصنيف',...B,'الوحدة','أول المدة','الوارد','المنصرف','التالف','تحويلات (±)','آخر المدة'],
+     body:R.rows.map(r=>[r.i.name,r.i.category||'—',...br(r.i),r.i.unit,r.open,r.inQ,r.outQ,r.dmQ,r.trQ,r.close])},
     {key:'log',title:'سجل العمليات',empty:'ما فيه عمليات.',
      head:['التاريخ','النوع','الصنف',...B,'الكمية','الجهة / المورد','المصدر','ملاحظات'],
      body:R.moves.map(m=>{const i=it(m.itemId)||{};return [dH(m.date),TYPE_T[m.type]||m.type,i.name||'—',...br(i),`${fmt(m.qty)} ${i.unit||''}`,m.party||'—',srcOf(m),m.notes||'—']})});
@@ -780,6 +792,7 @@ const fmtTime=t=>t?new Date(t).toLocaleString('ar-SA-u-ca-gregory-nu-latn',{date
 const rcSameItem=r=>rcBranchItems(r).find(i=>sameName(i.name,r.name))||null;
 function rcOpen(r){
   F.rid=r.id; F.rq=String(n(r.qty)); F.rnote=''; F.rsq='';
+  if(r.transfer){F.rf='1';F.rmode='same';F.rparts=[];return}
   const m=RMAP[rcMapKey(r)];
   const pool=rcBranchItems(r);
   const ids=m&&Array.isArray(m.itemIds)?m.itemIds.filter(id=>pool.some(i=>i.id===id)):[];
@@ -796,11 +809,19 @@ function vRcv(){
   const stTag=r=>r.status==='confirmed'?'<span class="tag ok">مستلم</span>':r.status==='rejected'?'<span class="tag zero">مرفوض</span>':'<span class="tag" style="background:var(--line2);color:var(--txt2)">ملغى</span>';
   const partsTxt=r=>Array.isArray(r.parts)&&r.parts.length?r.parts.map(p=>`${esc(p.name)}: ${fmt(p.qty)}`).join('، '):'—';
   return `
-  <div class="pagehead"><h2>توريدات واردة</h2><p>أصناف من فواتير المشتريات بانتظار الاستلام. عدّ البضاعة، اختر صنف المخزون، وأكّد — الكمية تنضاف للرصيد مباشرة.</p></div>
+  <div class="pagehead"><h2>توريدات واردة</h2><p>توريدات من فواتير المشتريات أو تحويلات من الفرع الثاني بانتظار الاستلام. عدّ البضاعة وأكّد — الكمية تنضاف للرصيد مباشرة.</p></div>
   <div class="card">
     <div class="card-h"><h3>بانتظار التأكيد</h3><span class="sub">${pend.length} صنف</span></div>
     ${pend.length?pend.map(rcRow).join(''):`<div class="empty"><strong>ما فيه توريدات معلّقة</strong>أي صنف مخزني ينحفظ بفاتورة مشتريات بيظهر هنا تلقائيًا.</div>`}
   </div>
+  ${outgoingTransfers().length?`<div class="card">
+    <div class="card-h"><h3>🔁 تحويلات مرسلة بانتظار الاستلام</h3><span class="sub">${outgoingTransfers().length}</span></div>
+    ${outgoingTransfers().map(g=>{const r0=g[0],a=access(CUR_EMAIL),mine=CUR_ALL||(a&&a.transfer&&a.branch===r0.fromBranch);return `<div class="rc">
+      <div class="rc-h"><div>
+        <div class="rc-name">${esc(r0.invoiceNo)} — إلى مخزون ${esc(brName(r0.branch))}</div>
+        <div class="rc-meta">${g.map(r=>`${esc(r.name)} ${fmt(r.qty)} ${esc(r.unit)}`).join('، ')} · ${dH(r0.invoiceDate)} · أرسله ${esc(r0.createdBy)||'—'}</div>
+      </div>${mine?`<button class="btn ghost sm danger" data-a="trfcancel" data-id="${esc(r0.trfId)}">إلغاء التحويل</button>`:''}</div></div>`}).join('')}
+  </div>`:''}
   <div class="card">
     <div class="card-h"><h3>آخر التوريدات</h3><span class="sub">آخر ${done.length}</span></div>
     <div class="tblwrap">
@@ -828,7 +849,8 @@ function rcRow(r){
     <div class="rc-h">
       <div>
         <div class="rc-name">${esc(r.name)} <span class="rc-qty">${fmt(r.qty)} ${esc(r.unit)}</span>${VIEW==='all'?` <span class="badge-branch">${esc(r.branch)}</span>`:''}</div>
-        <div class="rc-meta">فاتورة ${esc(r.invoiceNo)||'—'} · ${esc(r.supplier)||'—'} · ${dH(r.invoiceDate)} · أدخلها ${esc(r.createdBy)||'—'}</div>
+        <div class="rc-meta">${r.transfer?`🔁 ${esc(r.invoiceNo)} · تحويل من مخزون ${esc(brName(r.fromBranch))} · ${dH(r.invoiceDate)} · أرسله ${esc(r.createdBy)||'—'}${r.note?' · '+esc(r.note):''}`
+          :`فاتورة ${esc(r.invoiceNo)||'—'} · ${esc(r.supplier)||'—'} · ${dH(r.invoiceDate)} · أدخلها ${esc(r.createdBy)||'—'}`}</div>
       </div>
       ${open?'':canConfirm(r)?`<button class="btn primary sm" data-a="rcopen" data-id="${r.id}">استلام</button>`
         :`<span class="tag low">بانتظار ${(r.branch||DEFAULT_BRANCH)==='فرع الرياض'?'أحمد':'يوسف'}</span>`}
@@ -855,8 +877,8 @@ function rcForm(r){
   return `<div class="rc-b">
     <div class="grid g2">
       <label class="f"><span>الكمية المستلمة فعليًا (${esc(r.unit)})</span><input id="rc-q" data-rc="rq" type="number" step="any" min="0" value="${esc(F.rq)}"></label>
-      <label class="f"><span>كل 1 ${esc(r.unit)} = كم ${esc(firstUnit||'حبة')} بالمخزون؟</span><input id="rc-f" data-rc="rf" type="number" step="any" min="0" value="${esc(F.rf)}"></label>
-      <label class="f" style="grid-column:1/-1"><span>ملاحظة${diffQty?' <b style="color:var(--red)">(مطلوبة — المستلم يختلف عن الفاتورة)</b>':''}</span><input id="rc-n" data-rc="rnote" placeholder="مثال: وصل ناقص كرتون" value="${esc(F.rnote||'')}"></label>
+      ${r.transfer?'':`<label class="f"><span>كل 1 ${esc(r.unit)} = كم ${esc(firstUnit||'حبة')} بالمخزون؟</span><input id="rc-f" data-rc="rf" type="number" step="any" min="0" value="${esc(F.rf)}"></label>`}
+      <label class="f" style="grid-column:1/-1"><span>ملاحظة${diffQty?` <b style="color:var(--red)">(مطلوبة — المستلم يختلف عن ${r.transfer?'المرسل، والناقص ينسجّل فقد بالنقل':'الفاتورة'})</b>`:''}</span><input id="rc-n" data-rc="rnote" placeholder="مثال: وصل ناقص كرتون" value="${esc(F.rnote||'')}"></label>
     </div>
     ${!split?`<div class="rc-sec">
       <div class="rc-sec-h">يدخل المخزون باسم</div>
@@ -864,7 +886,7 @@ function rcForm(r){
         <span class="rc-part-n">${esc(r.name)} ${sameIt?`<span style="color:var(--txt2);font-size:12px">— الرصيد ${fmt(bal(sameIt.id))} ${esc(sameIt.unit)}</span>`:`<span class="tag low">صنف جديد — بينضاف للمخزون بالوحدة: ${esc(newUnit)}</span>`}</span>
         <b class="num">+${fmt(tot)} ${esc(sameIt?sameIt.unit:newUnit)}</b>
       </div>
-      <button class="btn sm" data-a="rcsplit" style="margin-top:8px">توزيع على ألوان / أقسام</button>
+      ${r.transfer?'':'<button class="btn sm" data-a="rcsplit" style="margin-top:8px">توزيع على ألوان / أقسام</button>'}
     </div>`:`<div class="rc-sec">
       <div class="rc-sec-h">توزيع على ألوان / أقسام <button class="btn ghost sm" data-a="rcsame">رجوع لنفس الصنف</button> ${many?`<span class="rc-sum ${Math.abs(sum-tot)<1e-6?'ok':'bad'}">موزّع ${fmt(sum)} من ${fmt(tot)}</span>`:''}</div>
       ${parts.length?parts.map((p,k)=>{const i=it(p.itemId)||{name:'(صنف محذوف)',unit:''};return `<div class="rc-part">
@@ -892,6 +914,7 @@ async function rcConfirm(){
   if(!r||r.status!=='pending')return toast('هذا التوريد ما عاد معلّق — يمكن أحد أكّده.','bad');
   const rq=n(F.rq), rf=n(F.rf), parts=(F.rparts||[]).slice(), note=(F.rnote||'').trim();
   if(rq<=0)return toast('الكمية المستلمة لازم أكبر من صفر — لو ما وصل شي استخدم «رفض».','bad');
+  if(r.transfer)return trfConfirm(r,rq,note);
   if(rf<=0)return toast('أدخل معامل تحويل الوحدة (1 لو نفس الوحدة).','bad');
   const split=F.rmode==='split';
   if(split&&!parts.length)return toast('أضف صنف واحد على الأقل (مثلًا اللون).','bad');
@@ -950,19 +973,58 @@ async function rcConfirm(){
   toast(`تم الاستلام: ${partsDoc.map(p=>`${p.name} +${fmt(p.qty)}`).join('، ')}`);
 }
 
+async function trfConfirm(r,rq,note){
+  if(rq>n(r.qty)+1e-9)return toast(`ما ينفع تستلم أكثر من المرسل (${fmt(r.qty)} ${r.unit}).`,'bad');
+  const loss=R3(n(r.qty)-rq);
+  if(loss>0&&!note)return toast('المستلم أقل من المرسل — اكتب ملاحظة بالسبب.','bad');
+  if(loss>0&&!confirm(`وصل ${fmt(rq)} من ${fmt(r.qty)} ${r.unit}.\nالناقص (${fmt(loss)}) بينسجّل «فقد بالنقل» على مخزون ${brName(r.fromBranch)}. متابعة؟`))return;
+  const upd={}, now=Date.now();
+  let si=rcSameItem(r), createdId=null;
+  if(!si){ // أول مرة يوصل الصنف للفرع: ينضاف بنفس الاسم والوحدة والتصنيف
+    si={id:uid(),name:String(r.name).trim(),category:r.category||autoCategory(r.name),unit:r.unit||'حبة',opening:0,min:0,branch:r.branch||DEFAULT_BRANCH};
+    upd[`items/${si.id}`]=si;DB.items.push(si);createdId=si.id;
+  }
+  const inMv={id:r.id+'_in',type:'in',date:today(),no:r.invoiceNo,party:`تحويل من مخزون ${brName(r.fromBranch)}`,itemId:si.id,qty:rq,
+    notes:note,by:CUR_EMAIL||'',receiptId:r.id,trfId:r.trfId};
+  upd[`moves/${inMv.id}`]=inMv;
+  let lossMv=null;
+  if(loss>0){
+    // المرسل: حركة التحويل تصير بالكمية اللي وصلت، والناقص تالف «فقد بالنقل» (الرصيد ما يتغيّر)
+    upd[`moves/${r.fromMoveId}/qty`]=rq;
+    lossMv={id:r.id+'_loss',type:'damage',date:today(),no:r.invoiceNo,party:'فقد بالنقل',itemId:r.fromItemId,qty:loss,
+      notes:`تحويل ${r.invoiceNo} إلى مخزون ${brName(r.branch)}: أُرسل ${fmt(r.qty)} ووصل ${fmt(rq)} — ${note}`,by:CUR_EMAIL||'',lossOf:r.id};
+    upd[`moves/${lossMv.id}`]=lossMv;
+  }
+  Object.assign(upd,{[`receipts/${r.id}/status`]:'confirmed',[`receipts/${r.id}/confirmedBy`]:CUR_EMAIL||'',[`receipts/${r.id}/confirmedAt`]:now,
+    [`receipts/${r.id}/receivedQty`]:rq,[`receipts/${r.id}/factor`]:1,[`receipts/${r.id}/parts`]:[{itemId:si.id,name:si.name,qty:rq}],[`receipts/${r.id}/note`]:note});
+  const sent=DB.moves.find(m=>m.id===r.fromMoveId), oldQ=sent?sent.qty:null;
+  DB.moves.push(inMv);if(lossMv)DB.moves.push(lossMv);if(sent&&loss>0)sent.qty=rq;
+  try{await fbRef.update(upd)}catch(e){
+    DB.moves=DB.moves.filter(m=>m!==inMv&&m!==lossMv);if(sent&&oldQ!=null)sent.qty=oldQ;
+    if(createdId)DB.items=DB.items.filter(i=>i.id!==createdId);
+    return toast('تعذّر الاستلام — حدّث الصفحة وحاول مرة ثانية.','bad');
+  }
+  if(loss>0)audit('فقد بالنقل',r.name,`تحويل ${r.invoiceNo} من ${brName(r.fromBranch)} إلى ${brName(r.branch)}: أُرسل ${fmt(r.qty)} ووصل ${fmt(rq)} ${r.unit} — ${note}`,true);
+  RC_KEYS.forEach(k=>delete F[k]);render();
+  toast(`تم الاستلام: ${si.name} +${fmt(rq)}`);
+}
+
 async function rcReject(){
   const r=rcById(F.rid);
   if(r&&!canConfirm(r))return toast('رفض التوريد من صلاحية مسؤول المخزون (يوسف، وأحمد للرياض) والإدارة.','bad');
   if(!r||r.status!=='pending')return toast('هذا التوريد ما عاد معلّق.','bad');
   const note=(F.rnote||'').trim();
   if(!note)return toast('اكتب سبب الرفض بخانة الملاحظة.','bad');
-  if(!confirm(`رفض توريد «${r.name}»؟ ما راح يدخل المخزون، ويظهر مرفوض عند المشتريات.`))return;
+  if(!confirm(r.transfer?`رفض تحويل «${r.name}»؟ الكمية (${fmt(r.qty)}) ترجع لمخزون ${brName(r.fromBranch)}.`
+    :`رفض توريد «${r.name}»؟ ما راح يدخل المخزون، ويظهر مرفوض عند المشتريات.`))return;
   const upd={};
+  if(r.transfer)upd[`moves/${r.fromMoveId}`]=null;
   upd[`receipts/${r.id}/status`]='rejected';
   upd[`receipts/${r.id}/rejectedBy`]=CUR_EMAIL||'';
   upd[`receipts/${r.id}/rejectedAt`]=Date.now();
   upd[`receipts/${r.id}/note`]=note;
   try{await fbRef.update(upd)}catch(e){return toast('تعذّر الرفض — حدّث الصفحة وحاول مرة ثانية.','bad')}
+  if(r.transfer){DB.moves=DB.moves.filter(m=>m.id!==r.fromMoveId);audit('رفض تحويل',r.name,`${r.invoiceNo} من ${brName(r.fromBranch)}: ${fmt(r.qty)} ${r.unit} — ${note}`,true)}
   RC_KEYS.forEach(k=>delete F[k]);
   render();toast('تم رفض التوريد.');
 }
@@ -977,6 +1039,80 @@ function rcNewItem(){
   DB.items.push(newItem);saveItem(newItem);
   F.rparts=(F.rparts||[]).concat([{itemId:newItem.id,qty:''}]);F.rsq='';
   render();toast(`انضاف «${nm}» للمخزون (الوحدة: ${unit}) — عدّل التصنيف من الأصناف لو تبي.`);
+}
+
+/* ---------- التحويل بين الفروع ----------
+   المرسل يختار الأصناف والكميات ← تنخصم من فرعه وتطلع للفرع الثاني بـ«توريدات واردة»
+   المستلم يأكد الكمية اللي وصلت ← تنضاف لفرعه. الناقص ينسجّل «فقد بالنقل» على المرسل.
+   الرفض أو الإلغاء قبل الاستلام يرجّع الكمية للمرسل. */
+function trfCard(){
+  const from=trfFrom(), to=otherBranch(from), lines=F.tlines||[];
+  const q=(F.tq||'').trim(), chosen=new Set(lines.map(l=>l.itemId));
+  const pool=DB.items.filter(i=>!i.archived&&(i.branch||DEFAULT_BRANCH)===from&&!chosen.has(i.id));
+  const matches=q?pool.filter(i=>matchName(i.name,q)).slice(0,10):[];
+  const adminAll=CUR_ALL&&VIEW==='all';
+  return `<div class="card" style="border-color:#B9D3CF">
+    <div class="card-h"><h3>🔁 تحويل من مخزون ${esc(brName(from))} إلى مخزون ${esc(brName(to))}</h3><span class="sub">يطلع للفرع الثاني بـ«توريدات واردة»</span></div>
+    <div class="card-b">
+      ${adminAll?`<label class="f" style="max-width:260px;margin-bottom:10px"><span>من مخزون</span><select data-rc="tfrom">${BRANCHES.map(b=>`<option value="${esc(b)}" ${b===from?'selected':''}>${esc(brName(b))}</option>`).join('')}</select></label>`:''}
+      ${lines.length?`<div class="tblwrap" style="margin-bottom:10px"><table><thead><tr><th>الصنف</th><th class="num">المتاح</th><th>الكمية المرسلة</th><th></th></tr></thead><tbody>
+        ${lines.map((l,k)=>{const i=it(l.itemId)||{};return `<tr><td class="wrap"><b>${esc(i.name)}</b></td><td class="num">${fmt(bal(l.itemId))} ${esc(i.unit)}</td>
+          <td><input id="tl-${k}" data-tl="${k}" type="number" step="any" min="0" value="${esc(l.qty)}" style="width:100px"> ${esc(i.unit)}</td>
+          <td><button class="btn ghost sm" data-a="trfrm" data-k="${k}">إزالة</button></td></tr>`}).join('')}</tbody></table></div>`:''}
+      <label class="f"><span>${lines.length?'أضف صنف ثاني':'الصنف'}</span><input id="tq" data-rc="tq" autocomplete="off" value="${esc(F.tq||'')}" placeholder="اكتب جزءًا من اسم الصنف..."></label>
+      ${q?`<div class="btnrow" style="margin-top:8px">${matches.length?matches.map(i=>`<button type="button" class="btn sm" data-a="trfadd" data-id="${i.id}">${esc(i.name)} <span style="color:var(--txt2)">(متاح ${fmt(bal(i.id))} ${esc(i.unit)})</span></button>`).join('')
+        :`<span style="font-size:12.5px;color:var(--txt2)">لا يوجد صنف مطابق بمخزون ${esc(brName(from))}</span>`}</div>`:''}
+      <label class="f" style="margin-top:10px"><span>ملاحظات</span><input id="tnote" data-rc="tnote" value="${esc(F.tnote||'')}" placeholder="اختياري — مثال: مع السواق محمد"></label>
+      <div class="btnrow" style="margin-top:12px"><button class="btn primary" data-a="sendtrf" ${lines.length?'':'disabled'}>إرسال التحويل (${lines.length} صنف)</button></div>
+    </div></div>`;
+}
+async function sendTransfer(){
+  if(!canTransfer())return toast('التحويل من صلاحية يوسف وأحمد والإدارة.','bad');
+  const from=trfFrom(), to=otherBranch(from), lines=(F.tlines||[]).filter(l=>l.itemId);
+  if(!lines.length)return toast('أضف صنف واحد على الأقل.','bad');
+  for(const l of lines){
+    const i=it(l.itemId),q=n(l.qty);
+    if(!i||(i.branch||DEFAULT_BRANCH)!==from)return toast('فيه صنف مو من مخزون الفرع المرسل — أزله.','bad');
+    if(q<=0)return toast(`اكتب كمية «${i.name}».`,'bad');
+    const av=minBalFrom(i.id,today());
+    if(q>av+1e-9)return toast(`المتاح من «${i.name}» ${fmt(av)} ${i.unit} بس.`,'bad');
+  }
+  if(!confirm(`إرسال ${lines.length} صنف من مخزون ${brName(from)} إلى مخزون ${brName(to)}؟\nالكميات تنخصم الحين، وتنضاف للفرع الثاني لما يأكد الاستلام.`))return;
+  const tid=uid(), no='تحويل-'+tid.slice(-5).toUpperCase(), now=Date.now(), note=(F.tnote||'').trim(), upd={}, local=[];
+  lines.forEach((l,k)=>{
+    const i=it(l.itemId), q=R3(l.qty), id=`trf_${tid}_${k}`;
+    const mv={id,type:'out',date:today(),no,party:`تحويل إلى مخزون ${brName(to)}`,itemId:i.id,qty:q,notes:note,by:CUR_EMAIL||'',trfId:tid};
+    upd[`moves/${id}`]=mv;local.push(mv);
+    upd[`receipts/${id}`]={id,status:'pending',transfer:true,trfId:tid,fromBranch:from,fromItemId:i.id,fromMoveId:id,branch:to,
+      name:i.name,unit:i.unit||'حبة',category:i.category||'',qty:q,invoiceNo:no,supplier:`مخزون ${brName(from)}`,invoiceDate:today(),invVer:0,
+      note,createdBy:nameOf(CUR_EMAIL),createdByEmail:CUR_EMAIL||'',createdAt:now};
+  });
+  DB.moves.push(...local);
+  try{await fbRef.update(upd)}catch(e){
+    const ids=new Set(local.map(m=>m.id));DB.moves=DB.moves.filter(m=>!ids.has(m.id));
+    return toast('تعذّر إرسال التحويل — تحقّق من الإنترنت وحاول مرة ثانية.','bad');
+  }
+  ['tlines','tq','tnote'].forEach(k=>delete F[k]);render();
+  toast(`انرسل التحويل ${no} — بانتظار استلام مخزون ${brName(to)}.`);
+}
+/* إلغاء تحويل قبل استلامه: يرجّع الكميات للمرسل */
+async function cancelTransfer(tid){
+  const rs=RC.filter(r=>r&&r.transfer&&r.trfId===tid&&r.status==='pending');
+  if(!rs.length)return toast('هذا التحويل ما عاد معلّق — يمكن انستلم.','bad');
+  const a=access(CUR_EMAIL);
+  if(!(CUR_ALL||(a&&a.transfer&&a.branch===rs[0].fromBranch)))return toast('إلغاء التحويل من صلاحية الفرع المرسل.','bad');
+  if(!confirm(`إلغاء التحويل ${rs[0].invoiceNo} (${rs.length} صنف)؟ الكميات ترجع لمخزون ${brName(rs[0].fromBranch)}.`))return;
+  const upd={};rs.forEach(r=>{upd[`receipts/${r.id}`]=null;upd[`moves/${r.fromMoveId}`]=null});
+  try{await fbRef.update(upd)}catch(e){return toast('تعذّر الإلغاء — حدّث الصفحة وحاول مرة ثانية.','bad')}
+  const ids=new Set(rs.map(r=>r.fromMoveId));DB.moves=DB.moves.filter(m=>!ids.has(m.id));
+  render();toast('انلغى التحويل ورجعت الكميات.');
+}
+/* تحويلات أرسلها فرعي وللحين ما انستلمت */
+function outgoingTransfers(){
+  const g={};
+  RC.filter(r=>r&&r.transfer&&r.status==='pending'&&(VIEW==='all'||r.fromBranch===VIEW))
+    .forEach(r=>{(g[r.trfId]=g[r.trfId]||[]).push(r)});
+  return Object.values(g).sort((a,b)=>(b[0].createdAt||0)-(a[0].createdAt||0));
 }
 
 /* ---------- الأحداث ---------- */
@@ -994,6 +1130,9 @@ function bind(){
     const evt=el.dataset.live?'input':'change';
     el.addEventListener(evt,()=>{F[el.dataset.f]=el.value;delete F.open;delete F.mpage;render()});
   });
+  R.querySelectorAll('[data-tl]').forEach(el=>{
+    el.addEventListener('input',()=>{const l=(F.tlines||[])[+el.dataset.tl];if(l){l.qty=el.value}});
+  });
   R.querySelectorAll('[data-rc]').forEach(el=>{
     el.addEventListener('input',()=>{F[el.dataset.rc]=el.value;render()});
   });
@@ -1007,6 +1146,11 @@ function bind(){
       switch(a){
         case 'goopen':go('open');break;
         case 'gorcv':go('rcv');break;
+        case 'trfadd':{F.tlines=(F.tlines||[]).concat([{itemId:el.dataset.id,qty:''}]);F.tq='';render();
+          const k=F.tlines.length-1,x=document.getElementById('tl-'+k);if(x)x.focus();break}
+        case 'trfrm':{F.tlines=(F.tlines||[]).filter((_,k)=>k!==+el.dataset.k);render();break}
+        case 'sendtrf':sendTransfer();break;
+        case 'trfcancel':cancelTransfer(el.dataset.id);break;
         case 'baldet':{F.bd=F.bd===el.dataset.id?null:el.dataset.id;render();break}
         case 'fixneg':{  // تسوية جرد للأصناف اللي نزل رصيدها تحت الصفر — للإدارة فقط
           if(!CUR_ALL)break;
